@@ -1,0 +1,63 @@
+<div *ngIf="product; else loading" class="detail-container">
+  <div class="detail-header">
+  <app-button variant="ghost" (pressed)="back()">← Quay lại</app-button>
+    <div class="detail-badges">
+      <span class="badge-level">Khóa học</span>
+  <span class="badge-status">{{ product.status === 1 ? 'Đang mở' : 'Tạm đóng' }}</span>
+    </div>
+  </div>
+
+  <!-- Hình ảnh sản phẩm -->
+  <div class="image-section">
+  <img [src]="selectedImageUrl || getMainImage()" [alt]="product.name" class="main-image" />
+
+    <div *ngIf="hasMultipleImages" class="thumbnail-list">
+      <img *ngFor="let img of product.images" [src]="img.imageUrl" [alt]="product.name"
+        [class.active]="img.imageMain || selectedImageUrl === img.imageUrl" class="thumbnail"
+        (click)="onThumbnailClick(img.imageUrl!)" />
+    </div>
+  </div>
+
+  <!-- Thông tin sản phẩm -->
+  <div class="info-section">
+  <h2 class="product-name">{{ product.name }}</h2>
+  <p class="product-description">{{ product.description }}</p>
+
+    <ul class="product-meta">
+  <li><strong>Code:</strong> {{ product.code }}</li>
+  <li><strong>Số lượng:</strong> {{ product.quantity || 'N/A' }}</li>
+    </ul>
+
+    <div class="price-row">
+  <h3 class="price">{{ product.price | number:'1.0-0' }} đ</h3>
+      <div class="actions">
+        <app-button variant="primary" size="md" (pressed)="addToCart()">Đăng ký ngay</app-button>
+  <app-button variant="secondary" size="sm" (pressed)="back()">Xem các khóa khác</app-button>
+      </div>
+    </div>
+
+    <div class="features">
+      <h4>Điểm nổi bật</h4>
+      <ul>
+        <li>Hơn 50 bài học thực hành</li>
+        <li>Đánh giá & phản hồi cá nhân</li>
+        <li>Tài liệu tải về và bài tập kèm theo</li>
+      </ul>
+    </div>
+
+    <!-- <div class="instructor">
+      <h4>Giảng viên</h4>
+      <div class="instructor-card">
+        <img src="assets/images/login.png" alt="Giảng viên" />
+        <div>
+          <div class="instructor-name">AIELTS Team</div>
+          <div class="instructor-desc">Giảng viên & chuyên gia luyện thi IELTS</div>
+        </div>
+      </div>
+    </div> -->
+  </div>
+</div>
+
+<ng-template #loading>
+  <p class="loading-text">Loading course detail...</p>
+</ng-template>

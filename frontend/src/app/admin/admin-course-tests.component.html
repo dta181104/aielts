@@ -1,0 +1,29 @@
+<div class="admin-page p-6">
+  <button (click)="back()" class="mb-4 px-3 py-1 bg-gray-600 rounded">← Trở về</button>
+  <h2 class="text-2xl font-bold mb-2">Bài test cho: {{ course?.title }}</h2>
+
+  <div class="mb-6 bg-white/5 p-4 rounded">
+    <h3 class="font-semibold mb-2">Tạo bài test</h3>
+    <input type="text" [(ngModel)]="model.title" placeholder="Tiêu đề bài test" class="p-2 rounded bg-gray-800 w-full" />
+    <textarea [(ngModel)]="model.content" rows="6" placeholder="Nội dung / JSON của bài test" class="p-2 rounded bg-gray-800 w-full mt-2"></textarea>
+    <div class="mt-2">
+      <button (click)="addTest()" class="px-4 py-2 bg-indigo-600 rounded">Thêm</button>
+    </div>
+  </div>
+
+  <div>
+    <h3 class="font-semibold mb-2">Danh sách bài test</h3>
+    <div *ngIf="tests.length === 0">Chưa có bài test nào.</div>
+    <div class="grid gap-3">
+      <div *ngFor="let t of tests" class="p-3 bg-white/3 rounded flex justify-between items-start">
+        <div>
+          <div class="font-semibold">{{ t.title }}</div>
+          <div class="text-sm text-gray-300">{{ t.content }}</div>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="remove(t)" class="px-3 py-1 bg-red-600 rounded">Xoá</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

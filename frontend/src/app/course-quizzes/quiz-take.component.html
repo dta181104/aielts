@@ -1,0 +1,49 @@
+<section class="quiz-take container">
+  <div class="header">
+    <app-button variant="ghost" (pressed)="onCancel()">← Quay lại</app-button>
+    <div class="header-title">
+      <h2>{{ selectedQuiz?.title }} <span class="muted">- {{ course?.name }}</span></h2>
+      <div class="quiz-meta">{{ quizSections.length }} phần · Tổng điểm tự chấm: {{ quizAutoScore ?? 0 }} / {{ quizAutoTotal }}</div>
+    </div>
+  </div>
+
+  <div *ngIf="selectedQuiz">
+    <div class="sections-overview">
+      <h3>Các phần trong bài thi</h3>
+      <ul class="section-list">
+        <li *ngFor="let sid of sectionOrder; let i = index" class="section-item">
+          <div class="section-info">
+            <div class="section-title">{{ sectionMeta[sid].title }}</div>
+            <div class="section-desc">{{ sectionMeta[sid].desc }}</div>
+          </div>
+          <div class="section-actions">
+            <div class="section-time">Thời lượng: {{ sectionMeta[sid].minutes }} phút</div>
+            <div *ngIf="sectionCompleted[sid]" class="section-status">Hoàn thành</div>
+            <div *ngIf="!sectionCompleted[sid] && sectionStarted[sid]" class="section-status">Đang làm — còn: {{ formatTime(sectionRemaining[sid]) }}</div>
+            <app-button *ngIf="!sectionStarted[sid] && !sectionCompleted[sid]" variant="primary" (pressed)="startSection(i)">Bắt đầu</app-button>
+            <app-button *ngIf="sectionStarted[sid] && !sectionCompleted[sid]" variant="ghost" (pressed)="openSection(i)">Mở</app-button>
+            <app-button *ngIf="sectionCompleted[sid]" variant="ghost" (pressed)="openSection(i)">Xem kết quả</app-button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+      <div *ngIf="currentSectionIndex!==null" class="section-container" style="margin-top:16px">
+      <h4>{{ sectionMeta[sectionOrder[currentSectionIndex]]?.title }} — Thời gian còn lại: {{ formatTime(sectionRemaining[sectionOrder[currentSectionIndex]]) }}</h4>
+      <app-quiz
+        [quizSections]="quizSections"
+        [answers]="answers"
+        [textAnswers]="textAnswers"
+        [selectedQuiz]="selectedQuiz"
+        [quizSubmitted]="quizSubmitted"
+        [quizAutoScore]="quizAutoScore"
+        [quizAutoTotal]="quizAutoTotal"
+        (cancel)="onCancel()"
+        (submit)="submitSection(currentSectionIndex!)"
+      ></app-quiz>
+      <div *ngIf="quizSubmitted" class="result" style="margin-top:12px">
+        <strong>Kết quả tự chấm phần này:</strong> {{ quizAutoScore }} / {{ quizAutoTotal }}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,10 @@
+<button
+  [attr.type]="type"
+  [class]="hostClasses()"
+  [disabled]="disabled"
+  [attr.aria-disabled]="disabled"
+  (click)="onClick($event)">
+  <ng-content></ng-content>
+  <!-- optional slot for right icon -->
+  <span class="btn__icon" aria-hidden="true"><ng-content select="[slot=icon]"></ng-content></span>
+</button>

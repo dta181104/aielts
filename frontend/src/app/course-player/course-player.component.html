@@ -1,0 +1,75 @@
+<section class="course-player container">
+  <div class="player-header">
+    <div class="header-left">
+      <app-button variant="ghost" size="md" (pressed)="back()">← Quay lại</app-button>
+      <div class="course-title-wrap">
+        <h2 class="course-title">{{ course?.name || 'Khóa học' }}</h2>
+        <div class="course-meta">
+          <div class="meta-item">Số bài học: {{ lessons.length }}</div>
+          <!-- <div class="meta-item">Trạng thái: {{ quizSubmitted ? 'Đã làm bài kiểm tra' : 'Chưa làm' }}</div> -->
+        </div>
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="progressPercent"></div>
+        </div>
+      </div>
+    </div>
+    <div class="player-actions">
+      <app-button variant="secondary" (pressed)="openQuizzes()">Danh sách bài kiểm tra</app-button>
+    </div>
+  </div>
+
+  <div class="player-grid">
+    <aside class="lessons-list">
+      <div class="lessons-head">
+        <h3>Danh sách bài học</h3>
+        <div class="lessons-actions-inline">
+          <!-- <app-button variant="primary" size="sm" (pressed)="openQuizzes()">Làm bài kiểm tra</app-button> -->
+        </div>
+      </div>
+      <ul>
+        <li *ngFor="let l of lessons" [class.active]="selectedLesson?.id === l.id" (click)="selectLesson(l)">
+          <div>
+            <div class="lesson-title">{{ l.title }}</div>
+            <div class="lesson-meta">{{ l.duration }}</div>
+          </div>
+          <div class="lesson-actions-inline">
+            <span class="lesson-pill">{{ l.duration }}</span>
+          </div>
+        </li>
+      </ul>
+    </aside>
+
+    <main class="lesson-content">
+      <app-quiz *ngIf="showQuiz"
+        [quizSections]="quizSections"
+        [answers]="answers"
+        [textAnswers]="textAnswers"
+        [selectedQuiz]="selectedQuiz"
+        [quizSubmitted]="quizSubmitted"
+        [quizAutoScore]="quizAutoScore"
+        [quizAutoTotal]="quizAutoTotal"
+        (cancel)="showQuiz = false"
+        (submit)="submitQuiz()">
+      </app-quiz>
+
+      <ng-template #lessonView>
+        <div *ngIf="selectedLesson; else empty">
+        <h3>{{ selectedLesson.title }}</h3>
+        <div class="video-placeholder">
+          <!-- Replace with <video> or embed when available -->
+          <img src="assets/images/video_placeholder.png" alt="video" />
+        </div>
+        <div class="lesson-text">{{ selectedLesson.content }}</div>
+        <div class="lesson-actions" style="margin-top:12px">
+          <app-button variant="primary" (pressed)="openQuizzes()">Làm bài kiểm tra</app-button>
+        </div>
+      </div>
+
+      </ng-template>
+
+      <ng-template #empty>
+        <p>Chọn một bài học để bắt đầu.</p>
+      </ng-template>
+    </main>
+  </div>
+</section>

@@ -1,0 +1,163 @@
+/* Container chính */
+.detail-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(15,15,40,0.04);
+  border: 1px solid rgba(107,33,168,0.06);
+}
+
+/* Section hình ảnh */
+.image-section {
+  flex: 1 1 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main-image {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  aspect-ratio: 4/3;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 16px;
+}
+
+/* Thumbnail */
+.thumbnail-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.thumbnail {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.thumbnail.active,
+.thumbnail:hover {
+  border-color: rgba(107,33,168,0.28);
+  transform: scale(1.06);
+  box-shadow: 0 8px 20px rgba(107,33,168,0.06);
+}
+/* Section thông tin */
+.info-section {
+  flex: 1 1 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.product-name {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.product-description {
+  font-size: 16px;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+/* Meta thông tin */
+.product-meta {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.product-meta li {
+  margin-bottom: 5px;
+}
+
+/* Giá */
+.price {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-color, #7702FF);
+  margin-bottom: 15px;
+}
+
+.detail-header { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; margin-bottom:6px }
+.detail-badges { display:flex; gap:8px; align-items:center }
+.badge-level, .badge-status { padding:6px 10px; border-radius:999px; font-weight:700; font-size:13px }
+.badge-level { background: linear-gradient(90deg,#6b21a8,#7702FF); color:#fff }
+.badge-status { background: #f3f0ff; color:#4b007f; border:1px solid rgba(107,33,168,0.06) }
+
+.price-row { display:flex; align-items:center; gap:20px; justify-content:space-between }
+.features ul { margin:0; padding-left:18px }
+.instructor-card { display:flex; gap:12px; align-items:center; margin-top:8px }
+.instructor-card img { width:56px; height:56px; border-radius:999px; object-fit:cover }
+
+/* Loading text */
+.loading-text {
+  text-align: center;
+  font-size: 18px;
+  color: #888;
+  margin-top: 50px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.enroll-btn {
+  background: var(--primary-color, #7702FF);
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+
+.enroll-btn:hover { transform: translateY(-2px); }
+
+.btn-secondary {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #333;
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .detail-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .main-image {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+  }
+
+  .info-section {
+    flex: 1 1 100%;
+  }
+}

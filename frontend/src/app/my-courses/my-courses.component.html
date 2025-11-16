@@ -1,0 +1,30 @@
+<section class="my-courses container">
+  <header class="section-header">
+    <h2>Khóa học đã đăng ký</h2>
+    <p class="section-sub">Danh sách các khóa học bạn đã đăng ký</p>
+  </header>
+
+  <div *ngIf="items?.length; else empty" class="courses-list">
+    <article *ngFor="let item of items" class="course-item">
+      <!-- <div class="thumb-wrap">
+        <img [src]="item.images?.[0]?.imageUrl || 'assets/images/default.png'" alt="{{item.name}}" />
+        <span class="status-badge">Đã đăng ký</span>
+      </div> -->
+      <div class="course-info">
+        <h3 class="course-title">{{ item.name }}</h3>
+  <p class="course-desc">{{ item.description || 'Khóa học đã đăng ký trên AIELTS' }}</p>
+        <div class="meta-row">
+          <!-- <div class="price">{{ item.price | number }} đ</div> -->
+          <div class="meta-right">
+            <app-button variant="primary" size="sm" (pressed)="goToCourse(item)">Vào khóa học</app-button>
+            <!-- <app-button variant="secondary" size="sm" (pressed)="openResources(item)">Tài liệu</app-button> -->
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <ng-template #empty>
+    <p class="empty-text">Bạn chưa đăng ký khóa học nào. Hãy xem <a routerLink="/courses">danh sách khóa học</a>.</p>
+  </ng-template>
+</section>

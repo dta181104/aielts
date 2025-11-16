@@ -1,0 +1,38 @@
+<div class="admin-page p-6">
+  <h2 class="text-2xl font-bold mb-4">Quản lý Khóa học (Admin)</h2>
+
+  <div class="mb-6 bg-white/5 p-4 rounded">
+    <h3 class="font-semibold mb-2">Tạo / Chỉnh sửa khóa học</h3>
+    <div class="grid grid-cols-1 gap-3">
+      <input type="text" [(ngModel)]="model.title" placeholder="Tiêu đề" class="p-2 rounded bg-gray-800" />
+      <input type="text" [(ngModel)]="model.imageUrl" placeholder="URL ảnh" class="p-2 rounded bg-gray-800" />
+      <textarea [(ngModel)]="model.description" rows="3" placeholder="Mô tả" class="p-2 rounded bg-gray-800"></textarea>
+      <input type="number" [(ngModel)]="model.price" placeholder="Giá" class="p-2 rounded bg-gray-800" />
+      <div class="flex gap-2">
+        <button (click)="save()" class="px-4 py-2 bg-indigo-600 rounded">Lưu</button>
+        <button (click)="startCreate()" class="px-4 py-2 bg-gray-600 rounded">Mới</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 class="font-semibold mb-2">Danh sách khóa học</h3>
+    <div *ngIf="courses.length === 0">Chưa có khóa học nào.</div>
+    <div class="grid grid-cols-1 gap-3">
+      <div *ngFor="let c of courses" class="p-3 bg-white/3 rounded flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img *ngIf="c.imageUrl" [src]="c.imageUrl" alt="thumb" class="w-20 h-12 object-cover rounded" />
+          <div>
+            <div class="font-semibold">{{ c.title }}</div>
+            <div class="text-sm text-gray-300">{{ c.description }}</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="manageTests(c)" class="px-3 py-1 bg-amber-600 rounded">Quản lý bài test</button>
+          <button (click)="edit(c)" class="px-3 py-1 bg-green-600 rounded">Sửa</button>
+          <button (click)="remove(c)" class="px-3 py-1 bg-red-600 rounded">Xoá</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<section class="courses container">
+  <header class="section-header">
+    <h2>Danh sách khóa học</h2>
+    <p class="section-sub">Chọn lộ trình phù hợp — học mọi lúc, mọi nơi.</p>
+  </header>
+
+  <div class="course-grid">
+    <article *ngFor="let course of courses" class="course-card">
+      <div class="course-card__thumb">
+        <!-- <img [src]="course.image" [alt]="course.title" /> -->
+        <div class="thumb-overlay">
+          <!-- <div class="badge">Khóa học</div> -->
+        </div>
+      </div>
+
+      <div class="course-card__body">
+        <h3 class="course-card__title">{{ course.title }}</h3>
+        <p class="course-card__desc">{{ course.shortDesc }}</p>
+        <div class="course-card__footer">
+          <div class="price">{{ course.price | number }} đ</div>
+          <app-button variant="primary" size="md" (pressed)="goDetail(course.id)">Xem chi tiết</app-button>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

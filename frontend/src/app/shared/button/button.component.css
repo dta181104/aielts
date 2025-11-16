@@ -1,0 +1,42 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .12s ease, transform .08s ease, box-shadow .08s ease;
+}
+.btn--full { width: 100%; justify-content: center }
+.btn--sm { padding: 6px 10px; font-size: 13px }
+.btn--md { padding: 8px 14px; font-size: 14px }
+.btn--lg { padding: 12px 18px; font-size: 15px }
+
+.btn--primary {
+  background: linear-gradient(90deg,#6b21a8,#7702FF);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(119,2,255,0.12);
+  border: none;
+}
+.btn--primary:hover { filter: brightness(1.03) }
+
+.btn--secondary {
+  /* light purple background for secondary actions (e.g., "Xem các khóa khác") */
+  background: #f6f0ff; /* very light purple */
+  color: #4b007f;
+  border: 1px solid rgba(107,33,168,0.12);
+}
+.btn--secondary:hover { background: #efe6ff }
+
+.btn--ghost {
+  /* light purple filled style with subtle border for "back" style buttons */
+  background: #f6f0ff; /* very light purple */
+  color: #4b007f;
+  border: 1px solid rgba(107,33,168,0.12);
+}
+.btn--ghost:hover { background: #efe6ff }
+
+.btn[disabled], .btn[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed }
+.btn__icon { display:inline-flex; align-items:center }

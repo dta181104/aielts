@@ -1,0 +1,27 @@
+<section class="quiz">
+  <h3>{{ selectedQuiz?.title || 'Bài kiểm tra (4 phần)' }}</h3>
+  <form (ngSubmit)="onSubmit()">
+    <ng-container *ngFor="let section of quizSections">
+      <div class="quiz-section">
+        <h4>{{ section.title }}</h4>
+        <div *ngFor="let q of section.questions" class="question">
+          <p class="q-text">{{ q.id }}. {{ q.prompt }}</p>
+          <div *ngIf="q.type === 'mcq'" class="options">
+            <label *ngFor="let o of q.options">
+              <input type="radio" name="q{{q.id}}" [value]="o.id" [(ngModel)]="answers[q.id]" /> {{ o.text }}
+            </label>
+            <div *ngIf="q.audioUrl" class="audio">(audio player placeholder)</div>
+          </div>
+          <div *ngIf="q.type === 'text'" class="options">
+            <textarea [(ngModel)]="textAnswers[q.id]" name="t{{q.id}}" rows="5" placeholder="Viết câu trả lời của bạn ở đây..."></textarea>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="quiz-actions">
+      <button type="button" class="btn" (click)="onCancel()">Hủy</button>
+      <button type="submit" class="btn btn--primary">{{ submitLabel }}</button>
+    </div>
+  </form>
+</section>

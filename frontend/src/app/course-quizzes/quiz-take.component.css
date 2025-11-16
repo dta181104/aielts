@@ -1,0 +1,16 @@
+.quiz-take.container { padding: 20px 12px; }
+.quiz-take .header { display:flex; align-items:flex-start; gap:12px; margin-bottom:20px }
+.quiz-take .header-title h2 { margin:0; font-size:18px }
+.quiz-take .header-title .muted { color:#6b7280; font-weight:500; font-size:14px; margin-left:6px }
+.quiz-take .quiz-meta { color:#6b7280; font-size:13px; margin-top:6px }
+.result { background:#f6ffed; padding:12px; border:1px solid #e6f7d8; border-radius:8px }
+
+.sections-overview { background:#fff; border:1px solid rgba(107,33,168,0.06); padding:16px; border-radius:10px }
+.section-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px }
+.section-item { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:8px; background:linear-gradient(180deg,#fff,#fbfbff) }
+.section-title { font-weight:700 }
+.section-desc { color:#6b7280; font-size:13px }
+.section-actions { display:flex; gap:8px; align-items:center }
+.section-time { color:#6b7280; font-size:13px; margin-right:8px }
+
+.section-container { background:#fff; border:1px solid rgba(20,20,30,0.04); padding:16px; border-radius:8px }

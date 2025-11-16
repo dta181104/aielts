@@ -1,0 +1,40 @@
+.quiz-list.container { padding: 20px 12px; }
+.quiz-list .header { display:flex; align-items:center; gap:16px; margin-bottom:20px }
+.quiz-list .header h2 { margin:0; font-size:20px }
+.quiz-list .header app-button { margin-right:6px }
+
+.quiz-list ul { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px }
+
+
+.quiz-row {
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	padding:16px 18px;
+	border-radius:10px;
+	background: linear-gradient(180deg,#fff,#fbfbff);
+	/* stronger baseline border to make cards more defined */
+	border: 1px solid rgba(107,33,168,0.12);
+	box-shadow: 0 6px 18px rgba(15,15,40,0.02);
+	transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
+}
+.quiz-row:hover {
+	/* keep color emphasis but remove lift/transform for a calmer UX */
+	border-color: rgba(107,33,168,0.18);
+	background: linear-gradient(90deg,#6b21a8,#7702FF);
+	color: #ffffff;
+	box-shadow: 0 6px 18px rgba(15,15,40,0.02);
+}
+
+.quiz-title { font-weight:700; font-size:16px; color:#0f172a }
+.quiz-row:hover .quiz-title { color: #fff }
+.quiz-actions { display:flex; gap:8px; align-items:center }
+.quiz-actions app-button { min-width:110px }
+.quiz-row:hover .quiz-actions app-button { filter: brightness(1.12) }
+
+.quiz-row { cursor: pointer }
+
+@media (max-width:800px) {
+	.quiz-row { flex-direction:column; align-items:stretch; gap:10px }
+	.quiz-actions { justify-content:flex-end }
+}

@@ -1,0 +1,38 @@
+<section class="account container">
+  <header class="section-header">
+    <h2>Quản lý tài khoản</h2>
+    <p class="section-sub">Cập nhật thông tin cá nhân của bạn</p>
+  </header>
+
+  <div class="account-meta" *ngIf="username || (roles && roles.length)">
+    <div class="meta-row"><strong>Tên đăng nhập: </strong> <span>{{ username || '—' }}</span></div>
+    <div class="meta-row" *ngIf="roles && roles.length"><strong>Vai trò:</strong> <span>{{ roles.join(', ') }}</span></div>
+  </div>
+
+  <form (ngSubmit)="save()" #form="ngForm" class="account-form">
+    <label class="form-row">
+      <span>Họ và tên</span>
+      <input name="fullName" required minlength="2" [(ngModel)]="model.fullName" />
+    </label>
+
+    <label class="form-row">
+      <span>Năm sinh</span>
+      <input name="yearOfBirth" type="number" min="1900" max="2025" [(ngModel)]="model.yearOfBirth" />
+    </label>
+
+    <label class="form-row">
+      <span>Email</span>
+      <input name="email" type="email" required [(ngModel)]="model.email" />
+    </label>
+
+    <label class="form-row">
+      <span>Số điện thoại</span>
+      <input name="phone" pattern="[0-9+\- ]*" [(ngModel)]="model.phone" />
+    </label>
+
+    <div class="form-actions">
+      <button type="button" class="btn" (click)="cancel()">Hủy</button>
+      <button type="submit" class="btn btn--primary" [disabled]="saving || !form.form.valid">Lưu</button>
+    </div>
+  </form>
+</section>

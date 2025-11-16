@@ -1,0 +1,131 @@
+<!-- Hero Section -->
+<section class="hero">
+  <picture>
+    <source media="(min-width: 1024px)" srcset="assets/images/background.png" />
+    <img class="hero__bg" src="assets/images/background.png" alt="IELTS background" />
+  </picture>
+
+  <div class="hero__overlay"></div>
+
+  <div class="hero__content container">
+    <h1 class="hero__title">
+      AIELTS
+    </h1>
+    <p class="hero__subtitle">
+      Lộ trình học IELTS toàn diện từ 0 - 7.0+
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" routerLink="/courses">Khóa học</a>
+      <a class="btn btn--primary" routerLink="/mock-test">Thi thử miễn phí</a>  
+    </div>
+
+    <ul class="hero__badges">
+      <li>
+        <i class="fa-solid fa-user-graduate"></i> AI chấm điểm Writing/Listening
+      </li>
+      <li>
+        <i class="fa-solid fa-laptop"></i> Học online linh hoạt
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- Featured Courses -->
+<section class="featured container">
+  <header class="section-header">
+    <h2>Danh sách khóa học</h2>
+  </header>
+
+  <div class="course-grid">
+    <article
+      *ngFor="let course of courses"
+      class="course-card"
+      (click)="viewCourse(course.id)"
+    >
+      <!-- <div class="course-card__thumb">
+        <img [src]="course.image" [alt]="course.title" />
+      </div> -->
+
+      <div class="course-card__body">
+        <h3 class="course-card__title">{{ course.title }}</h3>
+        <p class="course-card__desc">{{ course.shortDesc }}</p>
+        <div class="price">
+          <span class="price__now">{{ course.price | number }} đ</span>
+        </div>
+        <a [routerLink]="['/course', course.id]" class="btn btn--block btn--primary">Đăng ký ngay</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- Promo Section -->
+<section class="promo">
+  <div class="promo__inner container">
+    <div class="promo__text">
+      <h3>Thi thử IELTS miễn phí</h3>
+      <p>Trải nghiệm bài thi thật – Nhận ngay phản hồi chi tiết.</p>
+      <a class="btn btn--white" routerLink="/mock-test">Tham gia ngay</a>
+    </div>
+    <img class="promo__img" src="assets/images/mocktest.png" alt="Mock test banner" />
+  </div>
+</section>
+
+<!-- Blog Section -->
+<section class="blog container">
+  <header class="section-header">
+    <h2>Kinh nghiệm & Mẹo IELTS</h2>
+    <a routerLink="/blog" class="link">Xem thêm</a>
+  </header>
+  <div class="blog__grid">
+    <a class="blog-card" routerLink="/blog/writing-tips">
+      <img src="assets/images/blog-writing.jpg" alt="IELTS Writing Tips" />
+      <h3>5 Mẹo Writing Task 2 đạt 8.0+</h3>
+      <p>Cách triển khai luận điểm & chọn ví dụ thông minh.</p>
+    </a>
+
+    <a class="blog-card" routerLink="/blog/speaking-topics">
+      <img src="assets/images/blog-speaking.jpg" alt="IELTS Speaking Topics" />
+      <h3>30 chủ đề Speaking quen thuộc</h3>
+      <p>Gợi ý từ vựng & collocation giúp ăn điểm.</p>
+    </a>
+
+    <a class="blog-card" routerLink="/blog/listening-tips">
+      <img src="assets/images/blog-listening.jpg" alt="IELTS Listening Tips" />
+      <h3>Luyện phản xạ Listening hiệu quả</h3>
+      <p>Phương pháp shadowing được chứng minh hiệu quả.</p>
+    </a>
+  </div>
+</section>
+
+<!-- Newsletter -->
+<section class="newsletter">
+  <div class="newsletter__inner container">
+    <div>
+      <h3>Nhận tài liệu IELTS miễn phí</h3>
+      <p>Cập nhật đề thi thật, bài mẫu và ưu đãi khóa học mỗi tuần.</p>
+    </div>
+    <form class="newsletter__form" (submit)="$event.preventDefault()">
+      <input
+        class="input"
+        type="email"
+        placeholder="Email của bạn"
+        aria-label="Email"
+      />
+      <button class="btn btn--primary" type="submit">Đăng ký</button>
+    </form>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container footer__inner">
+    <a class="brand" routerLink="/">IELTS Academy</a>
+    <nav class="footer__nav">
+      <a routerLink="/about">Giới thiệu</a>
+      <a routerLink="/courses">Khóa học</a>
+      <a routerLink="/contact">Liên hệ</a>
+      <a routerLink="/policy">Chính sách</a>
+    </nav>
+    <p class="footer__copy">© {{ currentYear }} IELTS Academy. All rights reserved.</p>
+  </div>
+</footer>
