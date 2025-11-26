@@ -72,7 +72,7 @@ public class SizeService{
                 .orElseThrow(() -> new AppException(ErrorCode.SIZE_NOT_EXISTED));
 
         if(sizeEntity != null){
-            sizeEntity.setDeleted(false);
+            sizeEntity.setDeleted(true);
         }
 
         return sizeMapper.toSizeResponse(sizeEntity);

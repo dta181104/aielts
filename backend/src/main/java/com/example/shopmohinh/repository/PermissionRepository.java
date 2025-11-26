@@ -13,7 +13,7 @@ import java.util.Set;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission,Long> {
     @Query("""
-            select p from Permission p where p.deleted = true
+            select p from Permission p where p.deleted = false
             """)
     List<Permission> getAll();
 

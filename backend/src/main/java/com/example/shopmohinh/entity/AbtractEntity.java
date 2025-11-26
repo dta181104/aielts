@@ -20,5 +20,5 @@ public abstract class AbtractEntity {
     @Column(name = "UPDATED_BY")
     private String updatedBy;
     @Column(name = "DELETED")
-    private Boolean deleted = true;
+    private Boolean deleted = false;
 }

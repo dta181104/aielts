@@ -1,0 +1,81 @@
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
+
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">Quản lý người dùng</p>
+    </div>
+  </header>
+
+  <div class="admin-grid">
+    <form (ngSubmit)="save()" class="card">
+      <h3>{{ editing ? 'Chỉnh sửa người dùng' : 'Thêm người dùng' }}</h3>
+      <label>
+        <span>Username</span>
+        <input [(ngModel)]="model.username" name="username" [readonly]="editing" required />
+      </label>
+      <label *ngIf="!editing">
+        <span>Mật khẩu</span>
+        <input [(ngModel)]="model.password" name="password" type="password" autocomplete="new-password" />
+      </label>
+      <label>
+        <span>Họ tên</span>
+        <input [(ngModel)]="model.name" name="name" />
+      </label>
+      <label>
+        <span>Email</span>
+        <input [(ngModel)]="model.email" type="email" name="email" />
+      </label>
+      <label>
+        <span>Số điện thoại</span>
+        <input [(ngModel)]="model.phone" name="phone" />
+      </label>
+      <label>
+        <span>Trạng thái</span>
+        <select [(ngModel)]="model.status" name="status">
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+      </label>
+      <div class="permissions-box">
+        <p>Vai trò</p>
+        <div *ngIf="rolesLoading" class="empty">Đang tải vai trò...</div>
+        <div *ngIf="!rolesLoading && roles.length === 0" class="empty">Chưa có vai trò nào.</div>
+        <label *ngFor="let role of roles" class="perm-item">
+          <input
+            type="checkbox"
+            [checked]="model.roles.includes(roleKey(role))"
+            (change)="toggleRole(roleKey(role), $event)"
+          />
+          <span><strong>{{ role.code }}</strong> - {{ role.name }}</span>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary" [disabled]="saving">{{ editing ? 'Cập nhật' : 'Thêm mới' }}</button>
+        <button type="button" class="btn-secondary" (click)="reset()">Hủy</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Danh sách người dùng ({{ users.length }})</h3>
+        <div *ngIf="loading" class="empty">Đang tải người dùng...</div>
+        <div *ngIf="!loading && users.length === 0" class="empty">Chưa có người dùng nào.</div>
+        <ul class="list" *ngIf="!loading && users.length">
+        <li *ngFor="let user of users">
+          <div>
+            <strong>{{ user.username }}</strong> — {{ user.name || user.fullName || '—' }}
+            <p>{{ user.email || 'Không có email' }}</p>
+            <small>{{ user.phone || '—' }}</small>
+            <div class="badge-group">
+              <span *ngFor="let rid of user.roles">{{ roleLabel(rid) }}</span>
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button (click)="edit(user)">Sửa</button>
+            <button (click)="remove(user)">Xoá</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,49 @@
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
+
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">Quản lý quyền</p>
+    </div>
+  </header>
+
+  <div class="admin-grid">
+    <form (ngSubmit)="save()" class="card">
+      <h3>{{ editing ? 'Chỉnh sửa quyền' : 'Thêm quyền mới' }}</h3>
+      <label>
+        <span>Mã quyền</span>
+        <input [(ngModel)]="model.code" name="code" placeholder="VD: VIEW_USERS" required />
+      </label>
+      <label>
+        <span>Tên quyền</span>
+        <input [(ngModel)]="model.name" name="name" placeholder="Tên hiển thị" required />
+      </label>
+      <label>
+        <span>Mô tả</span>
+        <textarea [(ngModel)]="model.description" name="description" rows="3" placeholder="Mô tả ngắn"></textarea>
+      </label>
+      <div class="actions">
+        <button type="submit" class="btn-primary">{{ editing ? 'Cập nhật' : 'Thêm mới' }}</button>
+        <button type="button" class="btn-secondary" (click)="reset()">Hủy</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Danh sách quyền ({{ permissions.length }})</h3>
+      <div *ngIf="permissions.length === 0" class="empty">Chưa có quyền nào.</div>
+      <ul class="list" *ngIf="permissions.length">
+        <li *ngFor="let permission of permissions">
+          <div>
+            <strong>{{ permission.code }}</strong>
+            <p>{{ permission.name }}</p>
+            <!-- <small>{{ permission.description || '—' }}</small> -->
+          </div>
+          <div class="inline-actions">
+            <button (click)="edit(permission)">Sửa</button>
+            <button (click)="remove(permission)">Xoá</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

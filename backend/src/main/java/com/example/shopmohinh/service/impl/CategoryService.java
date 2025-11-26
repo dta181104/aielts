@@ -83,7 +83,7 @@ public class CategoryService {
         Category category = categoryRepository.findByCode(code).
                 orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         if(category != null){
-            category.setDeleted(false);
+            category.setDeleted(true);
         }
         return categoryMapper.toCategoryResponse(category);
     }

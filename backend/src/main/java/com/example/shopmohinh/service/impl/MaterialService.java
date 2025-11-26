@@ -72,7 +72,7 @@ public class MaterialService {
                 .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_EXISTED));
 
         if(materialEntity != null){
-            materialEntity.setDeleted(false);
+            materialEntity.setDeleted(true);
         }
 
         return materialMapper.toResponse(materialEntity);

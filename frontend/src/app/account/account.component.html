@@ -1,13 +1,17 @@
 <section class="account container">
   <header class="section-header">
     <h2>Quản lý tài khoản</h2>
-    <p class="section-sub">Cập nhật thông tin cá nhân của bạn</p>
+    <!-- <p class="section-sub">Cập nhật thông tin cá nhân của bạn</p> -->
   </header>
 
-  <div class="account-meta" *ngIf="username || (roles && roles.length)">
+  <div class="account-meta" *ngIf="username || profileCode || (roles && roles.length)">
     <div class="meta-row"><strong>Tên đăng nhập: </strong> <span>{{ username || '—' }}</span></div>
+     <div class="meta-row" *ngIf="profileCode"><strong>Mã tài khoản: </strong> <span>{{ profileCode }}</span></div>
     <div class="meta-row" *ngIf="roles && roles.length"><strong>Vai trò:</strong> <span>{{ roles.join(', ') }}</span></div>
   </div>
+  
+    <div class="alert alert--info" *ngIf="loading">Đang tải thông tin tài khoản...</div>
+    <div class="alert alert--error" *ngIf="!loading && apiError">{{ apiError }}</div>
 
   <form (ngSubmit)="save()" #form="ngForm" class="account-form">
     <label class="form-row">
@@ -15,10 +19,10 @@
       <input name="fullName" required minlength="2" [(ngModel)]="model.fullName" />
     </label>
 
-    <label class="form-row">
+    <!-- <label class="form-row">
       <span>Năm sinh</span>
       <input name="yearOfBirth" type="number" min="1900" max="2025" [(ngModel)]="model.yearOfBirth" />
-    </label>
+    </label> -->
 
     <label class="form-row">
       <span>Email</span>
@@ -32,7 +36,9 @@
 
     <div class="form-actions">
       <button type="button" class="btn" (click)="cancel()">Hủy</button>
-      <button type="submit" class="btn btn--primary" [disabled]="saving || !form.form.valid">Lưu</button>
+      <button type="submit" class="btn btn--primary" [disabled]="saving || !form.form.valid">
+        {{ saving ? 'Đang lưu...' : 'Lưu' }}
+      </button>
     </div>
   </form>
 </section>

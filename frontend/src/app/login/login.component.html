@@ -7,16 +7,16 @@
   >
     <!-- Tiêu đề -->
     <div class="text-center">
-      <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-2">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-black mb-2">
         Đăng Nhập
       </h1>
-      <p class="text-lg text-gray-200">
+      <p class="text-lg text-black/70">
         Chào mừng bạn trở lại với AIELTS!
       </p>
     </div>
 
     <!-- Form Angular -->
-    <form class="space-y-6" (ngSubmit)="onLogin()" #loginForm="ngForm">
+    <form class="space-y-6 text-black" (ngSubmit)="onLogin()" #loginForm="ngForm">
       <!-- Username -->
       <div>
         <input
@@ -26,7 +26,7 @@
           [(ngModel)]="user.username"
           placeholder="Tên đăng nhập"
           required
-          class="mt-1 block w-full px-4 py-3 bg-gray-700 bg-opacity-70 border border-gray-600 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-300 ease-in-out"
+          class="mt-1 block w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-300 ease-in-out"
         />
       </div>
 
@@ -39,7 +39,7 @@
           [(ngModel)]="user.pass"
           placeholder="Mật khẩu"
           required
-          class="mt-1 block w-full px-4 py-3 bg-gray-700 bg-opacity-70 border border-gray-600 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-300 ease-in-out"
+          class="mt-1 block w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-300 ease-in-out"
         />
       </div>
 
@@ -48,17 +48,11 @@
         {{ errorMessage }}
       </div>
 
-      <!-- Quên mật khẩu -->
-      <div class="flex items-center justify-between">
-        <a
-          (click)="openForgotPasswordModal($event)"
-          class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
-        >
-          Quên mật khẩu?
-        </a>
-        <label class="flex items-center text-sm text-gray-200">
-          <input type="checkbox" class="mr-2" [(ngModel)]="rememberMe" name="rememberMe" />
-          Ghi nhớ đăng nhập
+      <!-- Ghi nhớ đăng nhập (bên trái) và Quên mật khẩu (dòng dưới, bên phải) -->
+      <div class="remember-row">
+        <label class="remember-label">
+          <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+          <span>Ghi nhớ đăng nhập</span>
         </label>
       </div>
       <!-- Submit -->
@@ -68,19 +62,24 @@
           [disabled]="isSubmitting"
           class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transform transition-all duration-300 ease-in-out hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <span *ngIf="!isSubmitting">Đăng Nhập Ngay</span>
+          <span *ngIf="!isSubmitting">Đăng Nhập</span>
           <span *ngIf="isSubmitting">Đang đăng nhập...</span>
         </button>
+      </div>
+      <div class="forgot-row">
+        <a
+          (click)="openForgotPasswordModal($event)"
+          class="forgot-link text-sm font-medium text-black hover:text-gray-700 transition-colors duration-200 whitespace-nowrap"
+        >
+          Quên mật khẩu?
+        </a>
       </div>
     </form>
 
     <!-- Link sang đăng ký -->
     <div class="text-center text-sm text-gray-300">
       Bạn chưa có tài khoản?
-      <a
-        (click)="goToRegister()"
-        class="font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
-      >
+      <a (click)="goToRegister()" class="register-link font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200">
         Đăng ký ngay
       </a>
     </div>

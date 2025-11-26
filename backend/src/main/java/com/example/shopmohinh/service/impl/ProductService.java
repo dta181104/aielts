@@ -123,7 +123,7 @@ public class ProductService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         if (product != null) {
-            product.setDeleted(false);
+            product.setDeleted(true);
         }
 
         return productMapper.toProductResponse(product);

@@ -1,0 +1,70 @@
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
+
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">Quản lý vai trò</p>
+    </div>
+  </header>
+
+  <div class="admin-grid">
+    <form (ngSubmit)="save()" class="card">
+      <h3>{{ editing ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới' }}</h3>
+      <label>
+        <span>Mã vai trò</span>
+        <input [(ngModel)]="model.code" name="code" placeholder="VD: ADMIN" required />
+      </label>
+      <label>
+        <span>Tên vai trò</span>
+        <input [(ngModel)]="model.name" name="name" placeholder="Tên hiển thị" required />
+      </label>
+      <label>
+        <span>Mô tả</span>
+        <textarea [(ngModel)]="model.description" name="description" rows="3"></textarea>
+      </label>
+      <div class="permissions-box">
+        <p>Quyền được gán</p>
+        <div *ngIf="permissions.length === 0" class="empty">Chưa có quyền nào. Hãy tạo quyền trước.</div>
+        <label *ngFor="let p of permissions" class="perm-item">
+          <input type="checkbox" [checked]="model.permissionIds.includes(p.id)" (change)="togglePermission(p.id, $event)" />
+          <span><strong>{{ p.code }}</strong> - {{ p.name }}</span>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary">{{ editing ? 'Cập nhật' : 'Thêm mới' }}</button>
+        <button type="button" class="btn-secondary" (click)="reset()">Hủy</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Danh sách vai trò ({{ roles.length }})</h3>
+      <div *ngIf="roles.length === 0" class="empty">Chưa có vai trò nào.</div>
+      <ul class="list" *ngIf="roles.length">
+        <li *ngFor="let role of roles">
+          <div>
+            <strong>{{ role.code }}</strong>
+            <p>{{ role.name }}</p>
+            <!-- <small>{{ role.description || '—' }}</small> -->
+            <div class="badge-group">
+              <span *ngFor="let pid of role.permissionIds">
+                {{ permissionLabel(pid) }}
+              </span>
+            </div>
+            <div *ngIf="role.permissions?.length" class="permissions-list">
+              <strong>Quyền chi tiết:</strong>
+              <ul>
+                <li *ngFor="let perm of role.permissions">
+                  {{ perm.code }} — {{ perm.name }} ({{ perm.status || '—' }})
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="inline-actions">
+            <button (click)="edit(role)">Sửa</button>
+            <button (click)="remove(role)">Xoá</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

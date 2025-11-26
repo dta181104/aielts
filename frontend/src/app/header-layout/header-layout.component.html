@@ -1,4 +1,4 @@
-<div class="group-header">
+<div class="group-header" *ngIf="!hideOnAuthPages">
     <div class="header-logo">
             <!-- <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -69,6 +69,7 @@
 
           <div class="account-dropdown" *ngIf="showAccountDropdown">
             <a routerLink="/account" (click)="showAccountDropdown = false">Quản lý tài khoản</a>
+            <a *ngIf="isAdmin" routerLink="/admin" (click)="showAccountDropdown = false">Quản trị hệ thống</a>
             <button class="btn-logout" (click)="logout()">Đăng xuất</button>
           </div>
         </ng-container>

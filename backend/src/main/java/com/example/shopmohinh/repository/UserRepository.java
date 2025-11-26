@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     @Query("""
-            select u from User u where u.deleted = true
+            select u from User u where u.deleted = false
             """)
     List<User> getAll();
 

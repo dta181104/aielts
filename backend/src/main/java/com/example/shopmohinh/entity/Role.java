@@ -25,5 +25,6 @@ public class Role extends AbtractEntity{
     String name;
 
     @ManyToMany
+    @OrderBy("id ASC")
     Set<Permission> permissions;
 }

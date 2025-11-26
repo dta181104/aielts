@@ -67,5 +67,10 @@ export class AuthService {
 
   logout() {
     this.clearToken();
+    try {
+      localStorage.removeItem('user_profile');
+    } catch (e) {
+      // ignore
+    }
   }
 }

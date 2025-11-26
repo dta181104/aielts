@@ -39,6 +39,10 @@ public class SecurityConfig {
                         request
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET, "/product/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/courses/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/course-categories/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/sections/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/lessons/**").permitAll()
                                 .requestMatchers(HttpMethod.OPTIONS, "/users/register").permitAll()
                                 .requestMatchers("/momo/**").permitAll()
                                 .requestMatchers("/permissions/**").permitAll()

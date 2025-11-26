@@ -54,9 +54,17 @@ public class RoleService {
     public RoleResponse create(RoleRequest request){
         var role = roleMapper.toRole(request);
 
-        var permissions = permissionRepository.findAllById(request.getPermissions());
+//        var permissions = permissionRepository.findAllById(request.getPermissions());
+//
+//        role.setPermissions(new HashSet<>(permissions));
 
-        role.setPermissions(new HashSet<>(permissions));
+        var permissionIds = request.getPermissions();
+
+        if (permissionIds != null && !permissionIds.isEmpty()) {
+            // Nếu có thì mới tìm trong DB
+            var permissions = permissionRepository.findAllById(permissionIds);
+            role.setPermissions(new HashSet<>(permissions));
+        }
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -95,9 +103,18 @@ public class RoleService {
 
         role.setUpdatedBy(String.valueOf(id));
 
-        var permissions = permissionRepository.findAllById(request.getPermissions());
+//        var permissions = permissionRepository.findAllById(request.getPermissions());
 
-        role.setPermissions(new HashSet<>(permissions));
+//        role.setPermissions(new HashSet<>(permissions));
+
+        var requestedPermissions = request.getPermissions();
+        log.info("DEBUG: permissions list = " + request.getPermissions());
+        if (requestedPermissions != null) {
+            log.info("requestedPermissions: {}", requestedPermissions);
+            var permissions = permissionRepository.findAllById(requestedPermissions);
+            log.info("permissions: {}", permissions);
+            role.setPermissions(new HashSet<>(permissions));
+        }
 
         return roleMapper.toRoleResponse(roleRepository.save(role));
     }

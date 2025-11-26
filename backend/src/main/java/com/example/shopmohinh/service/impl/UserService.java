@@ -141,7 +141,7 @@ public class UserService {
         return roles;
     }
 
-    @PreAuthorize("hasAuthority('SHOW_USER')")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
 //    @PreAuthorize("hasRole('ADMIN')")
     //kiểm tra trc khi vào method nếu thỏa dk thì ms đc chạy method
     public List<UserResponse> getUsers() {
@@ -188,17 +188,25 @@ public class UserService {
         Long id = getMyInfo().getId();
         user.setUpdatedBy(String.valueOf(id));
 
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        user.setPass(passwordEncoder.encode(request.getPass()));
+        if (request.getPass() != null && !request.getPass().isEmpty()) {
+            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+            user.setPass(passwordEncoder.encode(request.getPass()));
+        }
 
         if (request.getAvatarFile() != null && !request.getAvatarFile().isEmpty()) {
             user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
         }
 
-        var roles = roleRepository.findAllById(request.getRoles());
+//        var roles = roleRepository.findAllById(request.getRoles());
+//
+//        user.setRoles(new HashSet<>(roles));
+        var requestedRoles = request.getRoles();
 
-        user.setRoles(new HashSet<>(roles));
-
+        if (requestedRoles != null) {
+//            var roles = roleRepository.findAllById(requestedRoles);
+            var roles = roleRepository.findAllByCodeIn(requestedRoles);
+            user.setRoles(new HashSet<>(roles));
+        }
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
@@ -208,7 +216,7 @@ public class UserService {
         User user = userRepository.findByCode(code).
                 orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        user.setDeleted(false);
+        user.setDeleted(true);
 
         return userMapper.toUserResponse(userRepository.save(user));
     }

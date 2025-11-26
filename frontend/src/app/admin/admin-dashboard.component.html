@@ -1,0 +1,34 @@
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
+
+  <header class="admin-header">
+    <div>
+      <p class="eyebrow">Quản trị hệ thống</p>
+      <h1>Tổng quan</h1>
+      <p class="muted">Quản lý người dùng, vai trò, quyền hạn và khóa học trong một nơi.</p>
+    </div>
+  </header>
+
+  <div class="stats-grid">
+    <a routerLink="/admin/users" class="stat-card">
+      <p>Quản lý Người dùng</p>
+      <h3>{{ stats.users }}</h3>
+      <span>Quản lý tài khoản & vai trò</span>
+    </a>
+    <a routerLink="/admin/roles" class="stat-card">
+      <p>Quản lý Vai trò</p>
+      <h3>{{ stats.roles }}</h3>
+      <span>Thiết lập vai trò và quyền</span>
+    </a>
+    <a routerLink="/admin/permissions" class="stat-card">
+      <p>Quản lý Quyền</p>
+      <h3>{{ stats.permissions }}</h3>
+      <span>Điều khiển chi tiết truy cập</span>
+    </a>
+    <a routerLink="/admin/courses" class="stat-card">
+      <p>Quản lý Khóa học</p>
+      <h3>{{ stats.courses }}</h3>
+      <span>Danh sách khóa học</span>
+    </a>
+  </div>
+</section>

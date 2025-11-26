@@ -14,6 +14,9 @@ import { Subscription } from 'rxjs';
 export class HeaderLayoutComponent implements OnDestroy {
   isLoggedIn = false;
   showAccountDropdown = false;
+  isAdmin = false;
+  // hide header on auth pages like /login and /register
+  hideOnAuthPages = false;
   private isBrowser: boolean;
   private routerSub: Subscription | null = null;
   private storageHandler: ((this: Window, ev: StorageEvent) => any) | null = null;
@@ -38,14 +41,47 @@ export class HeaderLayoutComponent implements OnDestroy {
           this.checkLogin();
           // close dropdown on navigation
           this.showAccountDropdown = false;
+          // update whether header should be hidden on certain routes
+          const url = (ev as NavigationEnd).urlAfterRedirects || (ev as NavigationEnd).url;
+          this.updateVisibility(url);
         }
       });
+
+      // initial visibility based on current router url
+      try {
+        this.updateVisibility(this.router.url);
+      } catch (e) {
+        // ignore
+      }
     }
+  }
+
+  private updateVisibility(url: string) {
+    if (!this.isBrowser) return;
+    const path = (url || '').split('?')[0].replace(/#.*$/, '');
+    // hide on login and register pages
+    this.hideOnAuthPages = path === '/login' || path === '/register';
   }
 
   private checkLogin() {
     if (this.isBrowser) {
       this.isLoggedIn = !!this.authService.getToken();
+      // derive roles/admin flag from saved user profile (if available).
+      try {
+        const raw = localStorage.getItem('user_profile');
+        if (raw) {
+          const profile = JSON.parse(raw);
+          const roles = profile?.roles ?? profile?.result?.roles ?? profile?.user?.roles ?? [];
+          this.isAdmin = Array.isArray(roles) && roles.some((r: any) => {
+            const code = (r?.code || r?.name || '').toString().toUpperCase();
+            return code === 'ADMIN' || code.includes('ADMIN');
+          });
+        } else {
+          this.isAdmin = false;
+        }
+      } catch (e) {
+        this.isAdmin = false;
+      }
     }
   }
 

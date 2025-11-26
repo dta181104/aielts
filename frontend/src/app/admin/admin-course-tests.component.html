@@ -1,29 +1,160 @@
-<div class="admin-page p-6">
-  <button (click)="back()" class="mb-4 px-3 py-1 bg-gray-600 rounded">← Trở về</button>
-  <h2 class="text-2xl font-bold mb-2">Bài test cho: {{ course?.title }}</h2>
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
 
-  <div class="mb-6 bg-white/5 p-4 rounded">
-    <h3 class="font-semibold mb-2">Tạo bài test</h3>
-    <input type="text" [(ngModel)]="model.title" placeholder="Tiêu đề bài test" class="p-2 rounded bg-gray-800 w-full" />
-    <textarea [(ngModel)]="model.content" rows="6" placeholder="Nội dung / JSON của bài test" class="p-2 rounded bg-gray-800 w-full mt-2"></textarea>
-    <div class="mt-2">
-      <button (click)="addTest()" class="px-4 py-2 bg-indigo-600 rounded">Thêm</button>
+  <button (click)="back()" class="back-btn">← Trở về tổng quan</button>
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">Quản lý quiz</p>
+      <h2>{{ course?.title || 'Khóa học' }}</h2>
+      <p class="muted">Tạo, chỉnh sửa quiz và câu hỏi trực tiếp theo từng bài học.</p>
     </div>
-  </div>
+  </header>
 
-  <div>
-    <h3 class="font-semibold mb-2">Danh sách bài test</h3>
-    <div *ngIf="tests.length === 0">Chưa có bài test nào.</div>
-    <div class="grid gap-3">
-      <div *ngFor="let t of tests" class="p-3 bg-white/3 rounded flex justify-between items-start">
-        <div>
-          <div class="font-semibold">{{ t.title }}</div>
-          <div class="text-sm text-gray-300">{{ t.content }}</div>
-        </div>
-        <div class="flex gap-2">
-          <button (click)="remove(t)" class="px-3 py-1 bg-red-600 rounded">Xoá</button>
-        </div>
+  <div *ngIf="loadingCourse" class="alert info">Đang tải thông tin khóa học...</div>
+  <div *ngIf="errorMessage" class="alert error">{{ errorMessage }}</div>
+
+  <div class="card select-card" *ngIf="sections.length">
+    <div class="select-row">
+      <label>
+        <span>Chọn chương</span>
+        <select [ngModel]="selectedSectionId" (ngModelChange)="onSectionChange($event)" name="sectionSelect">
+          <option *ngFor="let section of sections" [ngValue]="section.id">{{ section.title }}</option>
+        </select>
+      </label>
+      <label>
+        <span>Chọn bài học</span>
+        <select [ngModel]="selectedLessonId" (ngModelChange)="onLessonChange($event)" name="lessonSelect">
+          <option *ngFor="let lesson of lessons" [ngValue]="lesson.id">{{ lesson.title }}</option>
+        </select>
+      </label>
+    </div>
+    <p class="muted" *ngIf="!lessons.length">Chương này chưa có bài học nào để tạo quiz.</p>
+  </div>
+  <div class="card empty" *ngIf="!sections.length && !loadingCourse">Chưa có chương / bài học nào trong khóa này.</div>
+
+  <div class="admin-grid">
+    <form (ngSubmit)="saveQuiz()" class="card" *ngIf="lessons.length">
+      <h3>{{ editingQuizId ? 'Cập nhật quiz' : 'Tạo quiz mới' }}</h3>
+      <label>
+        <span>Tiêu đề</span>
+        <input type="text" [(ngModel)]="quizForm.title" name="quizTitle" required />
+      </label>
+      <label>
+        <span>Thời lượng (phút, để trống nếu không giới hạn)</span>
+        <input type="number" min="0" [(ngModel)]="quizForm.duration" name="quizDuration" />
+      </label>
+      <label>
+        <span>Điểm đạt (0 - 100)</span>
+        <input type="number" min="0" max="100" [(ngModel)]="quizForm.passScore" name="quizPassScore" />
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" [(ngModel)]="quizForm.shuffleQuestions" name="shuffle"> Xáo trộn câu hỏi
+      </label>
+      <div class="actions">
+        <button type="submit" class="btn-primary" [disabled]="savingQuiz">
+          {{ savingQuiz ? 'Đang lưu...' : (editingQuizId ? 'Cập nhật' : 'Tạo quiz') }}
+        </button>
+        <button type="button" class="text-btn" *ngIf="editingQuizId" (click)="startCreateQuiz()">Huỷ chỉnh sửa</button>
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Danh sách quiz ({{ quizzes.length }})</h3>
+      <div *ngIf="loadingQuizzes" class="alert info small">Đang tải danh sách quiz...</div>
+      <div *ngIf="!loadingQuizzes && !quizzes.length" class="empty">Chưa có quiz nào cho bài học này.</div>
+      <div class="tests-list" *ngIf="quizzes.length">
+        <article *ngFor="let quiz of quizzes" class="test-item">
+          <div class="quiz-meta">
+            <strong>{{ quiz.title }}</strong>
+            <p>{{ quiz.questions?.length || 0 }} câu hỏi •
+              {{ quiz.duration ? quiz.duration + ' phút' : 'Không giới hạn' }} • Điểm đạt:
+              {{ quiz.passScore !== undefined && quiz.passScore !== null ? quiz.passScore : '—' }}</p>
+          </div>
+          <div class="item-actions">
+            <button type="button" (click)="selectQuiz(quiz)">Chi tiết</button>
+            <button type="button" class="danger" (click)="deleteQuiz(quiz)">Xoá</button>
+          </div>
+        </article>
       </div>
     </div>
   </div>
-</div>
+
+  <div class="card quiz-detail" *ngIf="selectedQuiz as quiz">
+    <div class="quiz-detail-header">
+      <div>
+        <h3>{{ quiz.title }}</h3>
+        <p class="muted">{{ quiz.questions?.length || 0 }} câu hỏi •
+          {{ quiz.duration ? quiz.duration + ' phút' : 'Không giới hạn' }} • Điểm đạt:
+          {{ quiz.passScore !== undefined && quiz.passScore !== null ? quiz.passScore : '—' }} •
+          {{ quiz.shuffleQuestions ? 'Xáo trộn' : 'Giữ nguyên thứ tự' }}
+        </p>
+      </div>
+      <button type="button" class="text-btn" (click)="startCreateQuiz()">+ Quiz mới</button>
+    </div>
+
+    <section class="question-form">
+      <h4>{{ editingQuestionId ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi' }}</h4>
+      <form (ngSubmit)="saveQuestion()">
+        <label>
+          <span>Kỹ năng</span>
+          <select [(ngModel)]="questionForm.skill" name="questionSkill">
+            <option *ngFor="let skill of questionSkills" [ngValue]="skill">{{ skill }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Nội dung</span>
+          <textarea [(ngModel)]="questionForm.content" name="questionContent" rows="3" required></textarea>
+        </label>
+        <label>
+          <span>Đường dẫn audio (tuỳ chọn)</span>
+          <input type="url" [(ngModel)]="questionForm.audioUrl" name="questionAudio" />
+        </label>
+        <div class="question-options">
+          <div class="option-item" *ngFor="let option of questionForm.options; let idx = index">
+            <input type="text" [(ngModel)]="questionForm.options![idx]" name="option{{ idx }}" placeholder="Lựa chọn {{ idx + 1 }}" />
+            <button type="button" class="text-btn" (click)="removeQuestionOption(idx)" [disabled]="questionForm.options!.length <= 1">Xoá</button>
+          </div>
+          <button type="button" class="text-btn" (click)="addQuestionOption()">+ Thêm lựa chọn</button>
+        </div>
+
+        <label>
+          <span>Đáp án đúng</span>
+          <input type="text" [(ngModel)]="questionForm.correctOption" name="questionCorrectOption" placeholder="Ví dụ: A hoặc nội dung đáp án" />
+        </label>
+
+        <label>
+          <span>Lời giải / ghi chú</span>
+          <textarea [(ngModel)]="questionForm.explanation" name="questionExplanation" rows="2"></textarea>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary" [disabled]="savingQuestion">
+            {{ savingQuestion ? 'Đang lưu...' : (editingQuestionId ? 'Cập nhật câu hỏi' : 'Thêm câu hỏi') }}
+          </button>
+          <button type="button" class="text-btn" *ngIf="editingQuestionId" (click)="resetQuestionForm()">Huỷ</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="question-list">
+      <h4>Danh sách câu hỏi</h4>
+      <div *ngIf="loadingQuizDetail" class="alert info small">Đang tải chi tiết quiz...</div>
+      <div *ngIf="!loadingQuizDetail && !(quiz.questions?.length)" class="empty">Chưa có câu hỏi nào.</div>
+      <article class="question-item" *ngFor="let question of quiz.questions">
+        <div>
+          <strong>{{ question.content }}</strong>
+          <p class="muted">Kỹ năng: {{ question.skill || 'N/A' }}
+            <span *ngIf="question.options?.length">• {{ question.options?.length }} lựa chọn</span>
+            <span *ngIf="question.correctOption">• Đáp án: {{ question.correctOption }}</span>
+          </p>
+          <p class="muted" *ngIf="question.explanation">Giải thích: {{ question.explanation }}</p>
+          <a class="muted" *ngIf="question.audioUrl" [href]="question.audioUrl" target="_blank" rel="noopener noreferrer">Nghe audio</a>
+        </div>
+        <div class="item-actions">
+          <button type="button" (click)="editQuestion(question)">Sửa</button>
+          <button type="button" class="danger" (click)="deleteQuestion(question)">Xoá</button>
+        </div>
+      </article>
+    </section>
+  </div>
+</section>

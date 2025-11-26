@@ -77,6 +77,23 @@ export const routes: Routes = [
   // Admin pages (simple local, no auth guard for now)
   {
     path: 'admin',
+    pathMatch: 'full',
+    redirectTo: 'admin/users'
+  },
+  {
+    path: 'admin/users',
+    loadComponent: () => import('./admin/admin-users.component').then(m => m.AdminUsersComponent)
+  },
+  {
+    path: 'admin/roles',
+    loadComponent: () => import('./admin/admin-roles.component').then(m => m.AdminRolesComponent)
+  },
+  {
+    path: 'admin/permissions',
+    loadComponent: () => import('./admin/admin-permissions.component').then(m => m.AdminPermissionsComponent)
+  },
+  {
+    path: 'admin/courses',
     loadComponent: () => import('./admin/admin-courses.component').then(m => m.AdminCoursesComponent)
   },
   {

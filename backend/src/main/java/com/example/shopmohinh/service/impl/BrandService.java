@@ -72,7 +72,7 @@ public class BrandService {
                 .orElseThrow(() -> new AppException(ErrorCode.SIZE_NOT_EXISTED));
 
         if(brandEntity != null){
-            brandEntity.setDeleted(false);
+            brandEntity.setDeleted(true);
         }
 
         return brandMapper.toBrandResponse(brandEntity);

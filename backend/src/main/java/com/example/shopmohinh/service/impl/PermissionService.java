@@ -74,7 +74,7 @@ public class PermissionService {
         Permission permission = permissionRepository.findByCode(code).
                 orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        permission.setDeleted(false);
+        permission.setDeleted(true);
 
         return permissionMapper.toPermissionResponse(permissionRepository.save(permission));
     }

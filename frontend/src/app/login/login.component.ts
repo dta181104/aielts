@@ -66,9 +66,10 @@ export class LoginComponent {
           // Store token in cookie. If rememberMe is true, persist for 30 days.
           this.authService.setToken(res.result.token, this.rememberMe);
 
-          // Optionally store user profile (non-sensitive) — keep existing behavior
+          // Optionally store user profile (non-sensitive). Try multiple possible fields returned by API.
           try {
-            if (res.result.profile) localStorage.setItem('user_profile', JSON.stringify(res.result.profile));
+            const profile = res?.result?.profile ?? res?.result?.user ?? res?.result;
+            if (profile) localStorage.setItem('user_profile', JSON.stringify(profile));
           } catch (e) {
             // ignore
           }

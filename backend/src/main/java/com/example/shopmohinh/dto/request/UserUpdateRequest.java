@@ -24,7 +24,8 @@ public class UserUpdateRequest {
     private String pass;
     private LocalDateTime updatedDate;
     private String updatedBy;
-    private List<Long> roles;
+//    private List<Long> roles;
+    private List<String> roles;
     private Boolean deleted;
 
     MultipartFile avatarFile;

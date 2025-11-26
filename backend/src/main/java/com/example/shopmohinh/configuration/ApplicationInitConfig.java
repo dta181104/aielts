@@ -50,7 +50,7 @@ public class ApplicationInitConfig {
 
                 Set<Role> roles = new HashSet<>();
                 roles.add(roleRepository.findRoleByCode("ADMIN").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)));
-                roles.add(roleRepository.findRoleByCode("STAFF").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)));
+//                roles.add(roleRepository.findRoleByCode("STAFF").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)));
                 roles.add(roleRepository.findRoleByCode("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)));
 
                 account.setRoles(roles); // Thiết lập quyền cho tài khoản
@@ -75,7 +75,7 @@ public class ApplicationInitConfig {
                 System.out.println("Mã tài khoản mới: " + account.getCode());
 
                 userRepository.save(account);
-                log.warn("admin was has beem created with default username: admin, password: admin, please change it");
+                log.warn("admin was has been created with default username: admin, password: admin, please change it");
             }
         };
     }

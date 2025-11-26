@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class OrderService {
-  private baseUrl = 'http://localhost:8080/api/orders'; // đổi URL theo BE thật của bạn
+  private baseUrl = 'http://localhost:8080/identity/orders'; // đổi URL theo BE thật của bạn
 
   constructor(private http: HttpClient) {}
 

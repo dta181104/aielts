@@ -15,6 +15,9 @@ public interface UserMapper {
     User toUser(UserCreationRequest request);
 
     @Mapping(target = "roles",ignore = true)
+    @Mapping(target = "pass",ignore = true)
+    @Mapping(target = "avatar",ignore = true)
+    @Mapping(target = "deleted",ignore = true)
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
 
     //      Map email với phone

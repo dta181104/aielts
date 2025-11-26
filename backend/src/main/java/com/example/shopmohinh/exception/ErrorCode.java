@@ -34,7 +34,10 @@ public enum ErrorCode {
     PRODUCT_HAS_BEEN_EXITED(400_010,"This product is already in your shopping cart.",HttpStatus.BAD_REQUEST),
 
     CART_NOT_FOUND(404_001,"cart not found",HttpStatus.NOT_FOUND),
-    PRODUCT_NOT_FOUND(404_002,"product not found",HttpStatus.NOT_FOUND)
+    PRODUCT_NOT_FOUND(404_002,"product not found",HttpStatus.NOT_FOUND),
+
+    // Internal server error for unexpected internal failures
+    INTERNAL_ERROR(5000, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR)
 
     ;
 

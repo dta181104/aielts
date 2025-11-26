@@ -1,38 +1,125 @@
-<div class="admin-page p-6">
-  <h2 class="text-2xl font-bold mb-4">Quản lý Khóa học (Admin)</h2>
+<section class="admin-page">
+  <app-admin-nav></app-admin-nav>
 
-  <div class="mb-6 bg-white/5 p-4 rounded">
-    <h3 class="font-semibold mb-2">Tạo / Chỉnh sửa khóa học</h3>
-    <div class="grid grid-cols-1 gap-3">
-      <input type="text" [(ngModel)]="model.title" placeholder="Tiêu đề" class="p-2 rounded bg-gray-800" />
-      <input type="text" [(ngModel)]="model.imageUrl" placeholder="URL ảnh" class="p-2 rounded bg-gray-800" />
-      <textarea [(ngModel)]="model.description" rows="3" placeholder="Mô tả" class="p-2 rounded bg-gray-800"></textarea>
-      <input type="number" [(ngModel)]="model.price" placeholder="Giá" class="p-2 rounded bg-gray-800" />
-      <div class="flex gap-2">
-        <button (click)="save()" class="px-4 py-2 bg-indigo-600 rounded">Lưu</button>
-        <button (click)="startCreate()" class="px-4 py-2 bg-gray-600 rounded">Mới</button>
-      </div>
+  <header class="section-header">
+    <div>
+      <p class="eyebrow">Quản lý khóa học</p>
     </div>
-  </div>
+    <button type="button" class="btn-secondary" (click)="startCreate()">Tạo mới</button>
+  </header>
 
-  <div>
-    <h3 class="font-semibold mb-2">Danh sách khóa học</h3>
-    <div *ngIf="courses.length === 0">Chưa có khóa học nào.</div>
-    <div class="grid grid-cols-1 gap-3">
-      <div *ngFor="let c of courses" class="p-3 bg-white/3 rounded flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <img *ngIf="c.imageUrl" [src]="c.imageUrl" alt="thumb" class="w-20 h-12 object-cover rounded" />
-          <div>
-            <div class="font-semibold">{{ c.title }}</div>
-            <div class="text-sm text-gray-300">{{ c.description }}</div>
+  <form class="card filter-bar" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <input type="text" formControlName="keyword" placeholder="Tìm kiếm theo tiêu đề..." />
+    <select formControlName="status">
+      <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+    </select>
+    <select formControlName="type">
+      <option *ngFor="let option of typeOptions" [value]="option.value">{{ option.label }}</option>
+    </select>
+    <select formControlName="size" (change)="changePageSize()">
+      <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}/trang</option>
+    </select>
+    <button type="submit" class="btn-primary">Áp dụng</button>
+    <button type="button" class="btn-secondary" (click)="resetFilters()">Xoá lọc</button>
+  </form>
+
+  <div class="admin-grid">
+    <div class="card list-card">
+      <div class="card-header">
+        <div>
+          <h3>Danh sách khóa học</h3>
+          <p class="muted">Tổng cộng {{ totalCourses }} khóa học</p>
+        </div>
+        <span class="badge" *ngIf="loading">Đang tải...</span>
+      </div>
+
+      <div *ngIf="feedback" class="alert" [ngClass]="feedback.type">{{ feedback.text }}</div>
+      <div *ngIf="errorMessage" class="alert error">{{ errorMessage }}</div>
+
+      <div *ngIf="!loading && courses.length === 0" class="empty">Chưa có khóa học phù hợp.</div>
+
+      <div class="courses-list" *ngIf="courses.length">
+        <article *ngFor="let course of courses; trackBy: trackByCourseId" class="course-item">
+          <div class="info">
+            <img *ngIf="course.thumbnail || course.imageUrl" [src]="course.thumbnail || course.imageUrl" alt="thumbnail" />
+            <div>
+              <strong>{{ course.title }}</strong>
+              <p>{{ course.description || 'Chưa có mô tả' }}</p>
+              <div class="meta-row">
+                <span class="status-chip" [ngClass]="course.status?.toLowerCase()">{{ getStatusLabel(course.status) }}</span>
+                <span class="status-chip secondary">{{ getTypeLabel(course.courseType) }}</span>
+                <span class="price" *ngIf="course.price !== undefined">{{ course.price | number }} đ</span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="flex gap-2">
-          <button (click)="manageTests(c)" class="px-3 py-1 bg-amber-600 rounded">Quản lý bài test</button>
-          <button (click)="edit(c)" class="px-3 py-1 bg-green-600 rounded">Sửa</button>
-          <button (click)="remove(c)" class="px-3 py-1 bg-red-600 rounded">Xoá</button>
-        </div>
+          <div class="inline-actions">
+            <button type="button" (click)="manageTests(course)">Bài test</button>
+            <button type="button" (click)="editCourse(course)">Sửa</button>
+            <button type="button" (click)="deleteCourse(course)" [disabled]="deletingId === course.id">
+              {{ deletingId === course.id ? 'Đang xoá...' : 'Xoá' }}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="pagination" *ngIf="pageCount > 1">
+        <button type="button" (click)="changePage(-1)" [disabled]="pageIndex === 0 || loading">Trước</button>
+        <span>Trang {{ pageIndex + 1 }} / {{ pageCount || 1 }}</span>
+        <button type="button" (click)="changePage(1)" [disabled]="pageIndex >= pageCount - 1 || loading">Sau</button>
       </div>
     </div>
+
+    <form class="card form-card" [formGroup]="courseForm" (ngSubmit)="saveCourse()">
+      <h3>{{ editingCourse ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới' }}</h3>
+      <div class="form-grid">
+        <label>
+          <span>Tiêu đề *</span>
+          <input type="text" formControlName="title" />
+        </label>
+        <label>
+          <span>Level name</span>
+          <input type="text" formControlName="levelName" />
+        </label>
+        <label>
+          <span>Target band</span>
+          <input type="number" min="0" max="9" step="0.5" formControlName="targetBand" />
+        </label>
+        <label>
+          <span>Giá (VND)</span>
+          <input type="number" min="0" formControlName="price" />
+        </label>
+        <label>
+          <span>Loại khóa học</span>
+          <select formControlName="courseType">
+            <option value="FULL">Full program</option>
+            <option value="SINGLE">Single</option>
+            <option value="TIPS">Tips</option>
+          </select>
+        </label>
+        <label>
+          <span>Trạng thái</span>
+          <select formControlName="status">
+            <option value="DRAFT">Nháp</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+        </label>
+        <label class="full-width">
+          <span>Ảnh bìa (URL)</span>
+          <input type="text" formControlName="thumbnail" />
+        </label>
+        <label class="full-width">
+          <span>Mô tả</span>
+          <textarea rows="4" formControlName="description"></textarea>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary" [disabled]="saving">
+          {{ saving ? 'Đang lưu...' : editingCourse ? 'Cập nhật' : 'Tạo mới' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="startCreate()">Làm mới</button>
+      </div>
+    </form>
   </div>
-</div>
+</section>
