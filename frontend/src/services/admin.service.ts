@@ -5,7 +5,7 @@ import { environment } from '../environments/environment';
 
 export type CourseStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type CourseType = 'FULL' | 'SINGLE' | 'TIPS';
-export type LessonType = 'VIDEO' | 'QUIZ' | 'DOCUMENT';
+export type LessonType = 'VIDEO' | 'DOCUMENT';
 
 export interface CourseCategory {
   id: number;

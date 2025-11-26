@@ -10,7 +10,12 @@ import {
   CourseRequestPayload,
   CourseStatus,
   CourseType,
+  Lesson,
+  LessonRequestPayload,
+  LessonType,
   PageResult,
+  Section,
+  SectionRequestPayload,
 } from '../../services/admin.service';
 import { AdminNavComponent } from './admin-nav.component';
 
@@ -75,6 +80,17 @@ export class AdminCoursesComponent implements OnInit {
   ];
 
   readonly pageSizeOptions = [5, 10, 20, 50];
+  readonly lessonTypes: LessonType[] = ['VIDEO', 'DOCUMENT'];
+
+  sectionForm: FormGroup;
+  lessonForm: FormGroup;
+  sections: Section[] = [];
+  sectionLessons: Lesson[] = [];
+  selectedSectionId?: number;
+  loadingSections = false;
+  loadingLessons = false;
+  savingSection = false;
+  savingLesson = false;
 
   constructor(private admin: AdminService, private fb: FormBuilder, private router: Router) {
     this.courseForm = this.fb.group({
@@ -95,6 +111,24 @@ export class AdminCoursesComponent implements OnInit {
       size: [10],
       sortBy: ['createdDate'],
       direction: ['DESC'],
+    });
+
+    this.sectionForm = this.fb.group({
+      title: ['', [Validators.required, Validators.maxLength(255)]],
+      orderIndex: [null, Validators.min(0)],
+    });
+
+    this.lessonForm = this.fb.group({
+      sectionId: [null, Validators.required],
+      title: ['', [Validators.required, Validators.maxLength(255)]],
+      type: ['VIDEO', Validators.required],
+      videoUrl: [''],
+      content: [''],
+      duration: [null, Validators.min(0)],
+    });
+
+    this.lessonForm.get('sectionId')?.valueChanges.subscribe((sectionId) => {
+      this.updateSelectedSection(sectionId);
     });
   }
 
@@ -153,6 +187,19 @@ export class AdminCoursesComponent implements OnInit {
       courseType: 'FULL',
       status: 'DRAFT',
     });
+    this.sections = [];
+    this.sectionLessons = [];
+    this.selectedSectionId = undefined;
+    this.sectionForm.reset({ title: '', orderIndex: null });
+    this.lessonForm.reset({
+      sectionId: null,
+      title: '',
+      type: 'VIDEO',
+      videoUrl: '',
+      content: '',
+      duration: null,
+    });
+    this.updateSelectedSection(null);
   }
 
   editCourse(course: Course) {
@@ -167,6 +214,10 @@ export class AdminCoursesComponent implements OnInit {
       courseType: course.courseType ?? 'FULL',
       status: course.status ?? 'DRAFT',
     });
+    const courseId = Number(course.id);
+    if (Number.isFinite(courseId)) {
+      this.loadSections(courseId);
+    }
   }
 
   saveCourse() {
@@ -226,6 +277,114 @@ export class AdminCoursesComponent implements OnInit {
 
   manageQuizzes(course: Course) {
     this.router.navigate(['/admin', 'course', `${course.id}`, 'quizzes']);
+  }
+
+  saveSection() {
+    if (!this.editingCourse?.id) {
+      this.setFeedback('error', 'Hãy chọn một khóa học trước khi thêm chương.');
+      return;
+    }
+    if (this.sectionForm.invalid) {
+      this.sectionForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.sectionForm.value as { title: string; orderIndex: number | null };
+    const payload: SectionRequestPayload = {
+      courseId: Number(this.editingCourse.id),
+      title: value.title.trim(),
+      orderIndex:
+        value.orderIndex === null || value.orderIndex === undefined ? undefined : Number(value.orderIndex),
+    };
+
+    this.savingSection = true;
+    this.admin
+      .createSection(payload)
+      .pipe(
+        take(1),
+        finalize(() => (this.savingSection = false))
+      )
+      .subscribe({
+        next: () => {
+          this.sectionForm.reset({ title: '', orderIndex: null });
+          this.setFeedback('success', 'Đã thêm chương mới');
+          this.loadSections(Number(this.editingCourse?.id));
+        },
+        error: (error: unknown) => {
+          console.error('saveSection failed', error);
+          this.setFeedback('error', 'Không thể tạo chương.');
+        },
+      });
+  }
+
+  saveLesson() {
+    if (this.lessonForm.invalid) {
+      this.lessonForm.markAllAsTouched();
+      return;
+    }
+    const value = this.lessonForm.value as {
+      sectionId: number;
+      title: string;
+      type: LessonType;
+      videoUrl?: string | null;
+      content?: string | null;
+      duration?: number | null;
+    };
+
+    if (!value.sectionId) {
+      alert('Vui lòng chọn chương để thêm bài học.');
+      return;
+    }
+
+    const payload: LessonRequestPayload = {
+      sectionId: Number(value.sectionId),
+      title: value.title.trim(),
+      type: value.type,
+      videoUrl: value.videoUrl?.trim() || undefined,
+      content: value.content?.trim() || undefined,
+      duration: value.duration === null || value.duration === undefined ? undefined : Number(value.duration),
+    };
+
+    this.savingLesson = true;
+    this.admin
+      .createLesson(payload)
+      .pipe(
+        take(1),
+        finalize(() => (this.savingLesson = false))
+      )
+      .subscribe({
+        next: () => {
+          this.lessonForm.patchValue({
+            title: '',
+            videoUrl: '',
+            content: '',
+            duration: null,
+          });
+          if (value.sectionId) {
+            this.loadLessons(value.sectionId);
+          }
+          this.setFeedback('success', 'Đã thêm bài học');
+        },
+        error: (error: unknown) => {
+          console.error('saveLesson failed', error);
+          this.setFeedback('error', 'Không thể tạo bài học.');
+        },
+      });
+  }
+
+  selectSection(section: Section) {
+    if (!section?.id) {
+      return;
+    }
+    this.selectedSectionId = section.id;
+    this.lessonForm.patchValue({ sectionId: section.id }, { emitEvent: false });
+    this.updateSelectedSection(section.id);
+  }
+
+  refreshStructure() {
+    if (this.editingCourse?.id) {
+      this.loadSections(Number(this.editingCourse.id));
+    }
   }
 
   trackByCourseId(_index: number, course: Course) {
@@ -296,6 +455,65 @@ export class AdminCoursesComponent implements OnInit {
       });
   }
 
+  private loadSections(courseId: number) {
+    if (!courseId) {
+      return;
+    }
+    this.loadingSections = true;
+    this.admin
+      .getSectionsByCourse(courseId)
+      .pipe(
+        take(1),
+        finalize(() => (this.loadingSections = false))
+      )
+      .subscribe({
+        next: (sections) => {
+          this.sections = sections;
+          if (!sections.length) {
+            this.selectedSectionId = undefined;
+            this.sectionLessons = [];
+            this.lessonForm.patchValue({ sectionId: null }, { emitEvent: false });
+            this.updateSelectedSection(null);
+            return;
+          }
+
+          const existing = sections.find((section) => section.id === this.selectedSectionId);
+          const fallbackId = existing?.id ?? sections[0].id;
+          this.selectedSectionId = fallbackId;
+          this.lessonForm.patchValue({ sectionId: fallbackId }, { emitEvent: false });
+          this.updateSelectedSection(fallbackId);
+        },
+        error: (error: unknown) => {
+          console.error('loadSections failed', error);
+          this.sections = [];
+          this.sectionLessons = [];
+        },
+      });
+  }
+
+  private loadLessons(sectionId: number) {
+    if (!sectionId) {
+      this.sectionLessons = [];
+      return;
+    }
+    this.loadingLessons = true;
+    this.admin
+      .getLessonsBySection(sectionId)
+      .pipe(
+        take(1),
+        finalize(() => (this.loadingLessons = false))
+      )
+      .subscribe({
+        next: (lessons) => {
+          this.sectionLessons = lessons;
+        },
+        error: (error: unknown) => {
+          console.error('loadLessons failed', error);
+          this.sectionLessons = [];
+        },
+      });
+  }
+
   private buildCoursePayload(): CourseRequestPayload {
     const value = this.courseFormValue;
     const price = value.price === null || value.price === undefined ? undefined : Number(value.price);
@@ -320,5 +538,23 @@ export class AdminCoursesComponent implements OnInit {
         this.feedback = undefined;
       }
     }, 4000);
+  }
+
+  private updateSelectedSection(sectionId: unknown) {
+    if (sectionId === null || sectionId === undefined || sectionId === '') {
+      this.selectedSectionId = undefined;
+      this.sectionLessons = [];
+      return;
+    }
+
+    const numericId = typeof sectionId === 'number' ? sectionId : Number(sectionId);
+    if (!Number.isFinite(numericId) || numericId <= 0) {
+      this.selectedSectionId = undefined;
+      this.sectionLessons = [];
+      return;
+    }
+
+    this.selectedSectionId = numericId;
+    this.loadLessons(numericId);
   }
 }

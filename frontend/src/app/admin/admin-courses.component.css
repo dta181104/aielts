@@ -46,6 +46,17 @@ label { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem;
 .form-card .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
 .form-card .full-width { grid-column: 1 / -1; }
 .filter-bar button { align-self: stretch; }
+.structure-card { margin-top: 1.5rem; }
+.structure-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.structure-header-actions { display: flex; gap: 0.5rem; align-items: center; }
+.structure-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+.structure-column h4 { margin-bottom: 0.5rem; }
+.section-list, .lesson-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+.section-item, .lesson-item { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #f8fafc; }
+.section-item.active { border-color: #4f46e5; background: #eef2ff; }
+.section-item button { align-self: center; background: transparent; border: 1px solid #c7d2fe; border-radius: 0.5rem; padding: 0.35rem 0.9rem; cursor: pointer; color: #4f46e5; font-weight: 600; }
+.lesson-item strong { font-size: 0.95rem; }
+.lesson-item p { margin: 0.2rem 0 0; font-size: 0.85rem; }
 
 @media (max-width: 960px) {
 	.admin-grid { grid-template-columns: 1fr; }

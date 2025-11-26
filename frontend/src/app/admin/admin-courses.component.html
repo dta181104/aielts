@@ -122,4 +122,102 @@
       </div>
     </form>
   </div>
+
+  <div class="card structure-card" *ngIf="editingCourse">
+    <div class="structure-header">
+      <div>
+        <h3>Cấu trúc khóa học</h3>
+        <p class="muted">Quản lý chương & bài học cho "{{ editingCourse.title }}"</p>
+      </div>
+      <div class="structure-header-actions">
+        <span class="badge" *ngIf="loadingSections || loadingLessons">Đang đồng bộ...</span>
+        <button type="button" class="btn-secondary" (click)="refreshStructure()">Làm mới</button>
+      </div>
+    </div>
+
+    <div class="structure-columns">
+      <div class="structure-column">
+        <h4>Thêm chương</h4>
+        <form [formGroup]="sectionForm" (ngSubmit)="saveSection()">
+          <label>
+            <span>Tiêu đề *</span>
+            <input type="text" formControlName="title" />
+          </label>
+          <label>
+            <span>Thứ tự</span>
+            <input type="number" min="0" formControlName="orderIndex" />
+          </label>
+          <div class="actions">
+            <button type="submit" class="btn-primary" [disabled]="savingSection">
+              {{ savingSection ? 'Đang tạo...' : 'Thêm chương' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="section-list" *ngIf="sections.length; else emptySections">
+          <article *ngFor="let section of sections" [class.active]="section.id === selectedSectionId" class="section-item">
+            <div>
+              <strong>{{ section.title }}</strong>
+              <p class="muted">Thứ tự: {{ section.orderIndex ?? '—' }} • {{ section.lessons?.length || 0 }} bài học</p>
+            </div>
+            <button type="button" (click)="selectSection(section)">Chọn</button>
+          </article>
+        </div>
+        <ng-template #emptySections>
+          <p class="empty">Chưa có chương nào cho khóa học này.</p>
+        </ng-template>
+      </div>
+
+      <div class="structure-column">
+        <h4>Thêm bài học</h4>
+        <form [formGroup]="lessonForm" (ngSubmit)="saveLesson()">
+          <label>
+            <span>Chương</span>
+            <select formControlName="sectionId">
+              <option [ngValue]="null">-- Chọn chương --</option>
+              <option *ngFor="let section of sections" [ngValue]="section.id">{{ section.title }}</option>
+            </select>
+          </label>
+          <label>
+            <span>Tiêu đề *</span>
+            <input type="text" formControlName="title" />
+          </label>
+          <label>
+            <span>Loại bài học</span>
+            <select formControlName="type">
+              <option *ngFor="let type of lessonTypes" [value]="type">{{ type }}</option>
+            </select>
+          </label>
+          <label>
+            <span>Video URL</span>
+            <input type="text" formControlName="videoUrl" />
+          </label>
+          <label>
+            <span>Thời lượng (phút)</span>
+            <input type="number" min="0" formControlName="duration" />
+          </label>
+          <label>
+            <span>Nội dung</span>
+            <textarea rows="3" formControlName="content"></textarea>
+          </label>
+          <div class="actions">
+            <button type="submit" class="btn-primary" [disabled]="savingLesson">
+              {{ savingLesson ? 'Đang tạo...' : 'Thêm bài học' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="lesson-list">
+          <div *ngIf="loadingLessons" class="alert info">Đang tải bài học...</div>
+          <div *ngIf="!loadingLessons && !sectionLessons.length" class="empty">Chưa có bài học nào cho chương này.</div>
+          <article class="lesson-item" *ngFor="let lesson of sectionLessons">
+            <div>
+              <strong>{{ lesson.title }}</strong>
+              <p class="muted">Loại: {{ lesson.type }} • Thời lượng: {{ lesson.duration || '—' }} phút</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
