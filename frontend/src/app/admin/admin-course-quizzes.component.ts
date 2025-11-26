@@ -193,7 +193,9 @@ export class AdminCoursequizzesComponent implements OnInit {
     this.questionForm = {
       content: question.content,
       audioUrl: question.audioUrl,
-      options: question.options && question.options.length ? [...question.options] : [''],
+      options: question.options && question.options.length
+        ? question.options.map((option) => this.optionText(option))
+        : [''],
       correctOption: question.correctOption,
       explanation: question.explanation,
       skill: question.skill ?? 'READING',
@@ -219,10 +221,12 @@ export class AdminCoursequizzesComponent implements OnInit {
       .map((option) => option.trim())
       .filter((option) => option.length);
 
+    const formattedOptions = normalizedOptions.length ? this.formatOptionsWithLabels(normalizedOptions) : undefined;
+
     const payload: QuestionRequestPayload = {
       content: this.questionForm.content.trim(),
       audioUrl: this.questionForm.audioUrl?.trim() || undefined,
-      options: normalizedOptions.length ? normalizedOptions : undefined,
+      options: formattedOptions,
       correctOption: this.questionForm.correctOption?.trim() || undefined,
       explanation: this.questionForm.explanation?.trim() || undefined,
       skill: this.questionForm.skill || 'READING',
@@ -404,5 +408,52 @@ export class AdminCoursequizzesComponent implements OnInit {
       explanation: '',
       skill: 'READING',
     };
+  }
+  private readonly optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  optionLabel(option: string | undefined, index: number): string {
+    if (!option) {
+      return this.optionLetters[index] ?? `Lựa chọn ${index + 1}`;
+    }
+    const cleaned = option.trim().replace(/^"|"$/g, '');
+    const match = cleaned.match(/^([A-Z])\s*["']?\s*(?::|=)/i);
+    if (match) {
+      return match[1].toUpperCase();
+    }
+    return this.optionLetters[index] ?? `Lựa chọn ${index + 1}`;
+  }
+
+  optionText(option: string | undefined, fallbackIndex?: number): string {
+    if (!option) {
+      return '';
+    }
+    const cleaned = option.trim().replace(/^"|"$/g, '');
+    const match = cleaned.match(/^[A-Z]\s*["']?\s*(?::|=)\s*["']?(.*)$/i);
+    if (match && match[1]) {
+      return match[1].replace(/^"|"$/g, '').trim();
+    }
+    if (fallbackIndex !== undefined) {
+      return cleaned.replace(/^([A-Z])\.?\s*/, '').trim();
+    }
+    return cleaned;
+  }
+
+  trackOption(index: number): number {
+    return index;
+  }
+
+  private formatOptionsWithLabels(options: string[]): string[] {
+    return options.map((option, index) => {
+      const cleaned = option.replace(/^"|"$/g, '').trim();
+      if (this.isOptionLabeled(cleaned)) {
+        return cleaned;
+      }
+      const label = this.optionLetters[index] ?? `Lựa chọn ${index + 1}`;
+      return `${label}": "${cleaned}`;
+    });
+  }
+
+  private isOptionLabeled(value: string): boolean {
+    return /^[A-Z]\s*["']?\s*(?::|=)/i.test(value);
   }
 }

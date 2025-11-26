@@ -374,6 +374,7 @@ export class AdminService {
   private quizApi = `${this.baseUrl}/quizzes`;
   private questionApi = `${this.baseUrl}/questions`;
   private courseCache: Course[] = [];
+  private readonly optionLetters = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
   generateId(prefix = ''): string {
     return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -634,13 +635,11 @@ export class AdminService {
         payload.passScore === null || payload.passScore === undefined ? undefined : Number(payload.passScore),
       shuffleQuestions: payload.shuffleQuestions ?? false,
       questions: payload.questions?.map((question) => {
-        const normalizedOptions = (question.options ?? [])
-          .map((option) => option.trim())
-          .filter((option) => option.length);
+        const formattedOptions = this.normalizeQuestionOptions(question.options);
         return {
           content: question.content.trim(),
           audioUrl: question.audioUrl?.trim() || undefined,
-          options: normalizedOptions.length ? normalizedOptions : undefined,
+          options: formattedOptions,
           correctOption: question.correctOption?.trim() || undefined,
           explanation: question.explanation?.trim() || undefined,
           skill: question.skill,
@@ -650,17 +649,36 @@ export class AdminService {
   }
 
   private normalizeQuestionPayload(payload: QuestionRequestPayload): QuestionRequestPayload {
-    const normalizedOptions = (payload.options ?? [])
-      .map((option) => option.trim())
-      .filter((option) => option.length);
+    const normalizedOptions = this.normalizeQuestionOptions(payload.options);
     return {
       content: payload.content.trim(),
       audioUrl: payload.audioUrl?.trim() || undefined,
-      options: normalizedOptions.length ? normalizedOptions : undefined,
+      options: normalizedOptions,
       correctOption: payload.correctOption?.trim() || undefined,
       explanation: payload.explanation?.trim() || undefined,
       skill: payload.skill,
     };
+  }
+
+  private normalizeQuestionOptions(options?: string[] | null): string[] | undefined {
+    const cleanedOptions = (options ?? [])
+      .map((option) => option?.trim() ?? '')
+      .filter((option) => option.length)
+      .map((option) => option.replace(/^"|"$/g, '').trim());
+
+    if (!cleanedOptions.length) {
+      return undefined;
+    }
+
+    return cleanedOptions.map((option, index) => this.ensureOptionLabel(option, index));
+  }
+
+  private ensureOptionLabel(option: string, index: number): string {
+    if (/^[A-Z]\s*["']?\s*(?::|=)/i.test(option)) {
+      return option;
+    }
+    const label = this.optionLetters[index] ?? `Option ${index + 1}`;
+    return `${label}": "${option}`;
   }
 
   private buildCourseParams(params: CourseListParams): HttpParams {

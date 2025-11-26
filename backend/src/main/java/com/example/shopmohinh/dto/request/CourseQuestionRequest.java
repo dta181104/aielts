@@ -14,7 +14,8 @@ public class CourseQuestionRequest {
     String content;
     String audioUrl;
     List<String> options;
-    Integer correctOption;
+    // Accept letter like "A" or numeric string
+    String correctOption;
     String explanation;
     String skill;
 }

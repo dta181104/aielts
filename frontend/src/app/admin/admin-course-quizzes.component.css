@@ -32,6 +32,8 @@ label { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem;
 .question-form form { display: flex; flex-direction: column; gap: 0.25rem; }
 .question-options { border: 1px dashed rgba(17,23,42,0.15); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; }
 .option-item { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.option-label { width: 2rem; text-align: right; font-weight: 600; color: #111; display: flex; flex-direction: row; align-items: center; justify-content: flex-end; margin: 0; gap: 0.15rem; }
+.option-item input { flex: 1; }
 .option-item input { flex: 1; }
 .question-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .question-item { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(17,23,42,0.08); }

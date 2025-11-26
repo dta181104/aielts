@@ -26,8 +26,9 @@ public class QuestionRequest {
     @Size(min = 1, message = "At least one option is required")
     private List<@NotBlank(message = "Option must not be blank") String> options;
 
-    @NotNull(message = "Correct option index is required")
-    private Integer correctOption;
+    // Accept letter ("A") or numeric index (0-based) as String in requests. Validation will normalize.
+    @NotNull(message = "Correct option is required")
+    private String correctOption;
 
     private String explanation;
 

@@ -68,7 +68,8 @@ public class QuizService {
         String optionsJson = null;
         if (!CollectionUtils.isEmpty(request.getOptions())) {
             // Simple JSON array creation
-            optionsJson = toJsonArray(request.getOptions());
+            List<String> clean = QuestionOptionUtils.normalizeOptions(request.getOptions());
+            optionsJson = toJsonArray(clean);
         }
 
         QuestionEntity q = QuestionEntity.builder()
@@ -76,7 +77,7 @@ public class QuizService {
                 .content(request.getContent())
                 .audioUrl(request.getAudioUrl())
                 .options(optionsJson)
-                .correctOption(request.getCorrectOption() == null ? null : String.valueOf(request.getCorrectOption()))
+                .correctOption(request.getCorrectOption() == null ? null : QuestionOptionUtils.toLetter(request.getCorrectOption()))
                 .explanation(request.getExplanation())
                 .skill(request.getSkill())
                 .build();

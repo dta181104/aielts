@@ -39,6 +39,7 @@ public class SecurityConfig {
                         request
                                 .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                                 .requestMatchers(HttpMethod.GET, "/product/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/quizzes/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/courses/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/course-categories/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/sections/**").permitAll()
@@ -63,11 +64,9 @@ public class SecurityConfig {
 
 //                      Sử dụng thiết lập đã tạo để chuyển đổi đối tượng trong JWT thành 1 đối tượng xác thực trong spring security
                                                         .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                                        .and()
-
-//                      Sử dụng thiết lập đã tạo để đưa ra phản hồi mong muốn khi yêu cầu xác thực thất bại
-                                                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                                 )
+//                      Sử dụng thiết lập đã tạo để đưa ra phản hồi mong muốn khi yêu cầu xác thực thất bại
+                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 );
 
         return httpSecurity.build();

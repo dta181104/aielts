@@ -109,8 +109,9 @@
           <input type="url" [(ngModel)]="questionForm.audioUrl" name="questionAudio" />
         </label>
         <div class="question-options">
-          <div class="option-item" *ngFor="let option of questionForm.options; let idx = index">
-            <input type="text" [(ngModel)]="questionForm.options![idx]" name="option{{ idx }}" placeholder="Lựa chọn {{ idx + 1 }}" />
+          <div class="option-item" *ngFor="let option of questionForm.options; let idx = index; trackBy: trackOption">
+            <label class="option-label">{{ optionLabel(option, idx) }}:</label>
+            <input type="text" [(ngModel)]="questionForm.options![idx]" name="option{{ idx }}" placeholder="Nhập đáp án" />
             <button type="button" class="text-btn" (click)="removeQuestionOption(idx)" [disabled]="questionForm.options!.length <= 1">Xoá</button>
           </div>
           <button type="button" class="text-btn" (click)="addQuestionOption()">+ Thêm lựa chọn</button>
@@ -146,6 +147,12 @@
             <span *ngIf="question.options?.length">• {{ question.options?.length }} lựa chọn</span>
             <span *ngIf="question.correctOption">• Đáp án: {{ question.correctOption }}</span>
           </p>
+          <ul class="options-list" *ngIf="question.options?.length">
+            <li *ngFor="let option of question.options; let idx = index">
+              <strong>{{ optionLabel(option, idx) }}.</strong>
+              <span>{{ optionText(option, idx) }}</span>
+            </li>
+          </ul>
           <p class="muted" *ngIf="question.explanation">Giải thích: {{ question.explanation }}</p>
           <a class="muted" *ngIf="question.audioUrl" [href]="question.audioUrl" target="_blank" rel="noopener noreferrer">Nghe audio</a>
         </div>
