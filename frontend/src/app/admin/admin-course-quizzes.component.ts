@@ -403,7 +403,7 @@ export class AdminCoursequizzesComponent implements OnInit {
     return {
       content: '',
       audioUrl: '',
-      options: ['', ''],
+      options: ['', '', '', ''],
       correctOption: '',
       explanation: '',
       skill: 'READING',

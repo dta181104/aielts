@@ -110,8 +110,7 @@ public class CourseQuestionService {
 
         String optionsJson = null;
         if (!CollectionUtils.isEmpty(request.getOptions())) {
-            List<String> clean = QuestionOptionUtils.normalizeOptions(request.getOptions());
-            optionsJson = toJsonArray(clean);
+            optionsJson = QuestionOptionUtils.optionsToJson(request.getOptions());
         }
 
         QuestionEntity entity = QuestionEntity.builder()
@@ -130,7 +129,7 @@ public class CourseQuestionService {
     private QuestionResponse toResponse(QuestionEntity q) {
         List<String> options = null;
         if (q.getOptions() != null) {
-            options = parseJsonArray(q.getOptions());
+            options = QuestionOptionUtils.storedJsonToList(q.getOptions());
         }
         String correctOpt = QuestionOptionUtils.normalizeCorrectOption(q.getCorrectOption());
         return QuestionResponse.builder()

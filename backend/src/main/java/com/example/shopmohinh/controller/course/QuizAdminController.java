@@ -1,6 +1,7 @@
 package com.example.shopmohinh.controller.course;
 
 import com.example.shopmohinh.dto.request.QuizRequest;
+import com.example.shopmohinh.dto.request.QuestionRequest;
 import com.example.shopmohinh.dto.response.ApiResponse;
 import com.example.shopmohinh.dto.response.QuestionResponse;
 import com.example.shopmohinh.dto.response.QuizResponse;
@@ -84,6 +85,25 @@ public class QuizAdminController {
         }
         quizRepository.delete(quiz);
         return ApiResponse.<Void>builder().message("Quiz deleted").build();
+    }
+
+    @PostMapping("/{quizId}/questions")
+    public ApiResponse<QuestionResponse> createQuestion(@PathVariable Long quizId, @RequestBody QuestionRequest request) {
+        QuizEntity quiz = quizRepository.findById(quizId).orElse(null);
+        if (quiz == null) {
+            return ApiResponse.<QuestionResponse>builder().message("Quiz not found").build();
+        }
+        QuestionEntity q = QuestionEntity.builder()
+                .quiz(quiz)
+                .content(request.getContent())
+                .audioUrl(request.getAudioUrl())
+                .options(request.getOptions() != null ? QuestionOptionUtils.optionsToJson(request.getOptions()) : null)
+                .correctOption(request.getCorrectOption() != null ? QuestionOptionUtils.toLetter(request.getCorrectOption()) : null)
+                .explanation(request.getExplanation())
+                .skill(request.getSkill())
+                .build();
+        QuestionEntity saved = questionRepository.save(q);
+        return ApiResponse.<QuestionResponse>builder().result(toQuestionResponse(saved)).build();
     }
 
     // Helpers

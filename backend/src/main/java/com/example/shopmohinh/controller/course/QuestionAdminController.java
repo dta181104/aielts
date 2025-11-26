@@ -38,7 +38,7 @@ public class QuestionAdminController {
                 .quiz(quiz)
                 .content(request.getContent())
                 .audioUrl(request.getAudioUrl())
-                .options(request.getOptions() != null ? JsonUtils.listToJson(QuestionOptionUtils.normalizeOptions(request.getOptions())) : null)
+                .options(request.getOptions() != null ? QuestionOptionUtils.optionsToJson(request.getOptions()) : null)
                 .correctOption(request.getCorrectOption() != null ? QuestionOptionUtils.toLetter(request.getCorrectOption()) : null)
                 .explanation(request.getExplanation())
                 .skill(request.getSkill())
@@ -69,7 +69,7 @@ public class QuestionAdminController {
         if (q == null) return ApiResponse.<QuestionResponse>builder().message("Question not found").build();
         if (request.getContent() != null) q.setContent(request.getContent());
         if (request.getAudioUrl() != null) q.setAudioUrl(request.getAudioUrl());
-        if (request.getOptions() != null) q.setOptions(JsonUtils.listToJson(QuestionOptionUtils.normalizeOptions(request.getOptions())));
+        if (request.getOptions() != null) q.setOptions(QuestionOptionUtils.optionsToJson(request.getOptions()));
         if (request.getCorrectOption() != null) q.setCorrectOption(QuestionOptionUtils.toLetter(request.getCorrectOption()));
         if (request.getExplanation() != null) q.setExplanation(request.getExplanation());
         if (request.getSkill() != null) q.setSkill(request.getSkill());
@@ -88,7 +88,7 @@ public class QuestionAdminController {
     // Helpers
     private QuestionResponse toResponse(QuestionEntity q) {
         List<String> options = null;
-        if (q.getOptions() != null) options = JsonUtils.jsonToList(q.getOptions());
+        if (q.getOptions() != null) options = QuestionOptionUtils.storedJsonToList(q.getOptions());
         return QuestionResponse.builder()
                 .id(q.getId())
                 .quizId(q.getQuiz() != null ? q.getQuiz().getId() : null)
