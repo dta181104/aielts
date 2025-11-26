@@ -53,7 +53,7 @@
             </div>
           </div>
           <div class="inline-actions">
-            <button type="button" (click)="manageTests(course)">Bài test</button>
+            <button type="button" (click)="manageQuizzes(course)">Bài quiz</button>
             <button type="button" (click)="editCourse(course)">Sửa</button>
             <button type="button" (click)="deleteCourse(course)" [disabled]="deletingId === course.id">
               {{ deletingId === course.id ? 'Đang xoá...' : 'Xoá' }}

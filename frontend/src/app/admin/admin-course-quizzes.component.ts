@@ -17,13 +17,13 @@ import {
 import { AdminNavComponent } from './admin-nav.component';
 
 @Component({
-  selector: 'app-admin-course-tests',
+  selector: 'app-admin-course-quizzes',
   standalone: true,
   imports: [CommonModule, FormsModule, AdminNavComponent],
-  templateUrl: './admin-course-tests.component.html',
-  styleUrls: ['./admin-course-tests.component.css']
+  templateUrl: './admin-course-quizzes.component.html',
+  styleUrls: ['./admin-course-quizzes.component.css']
 })
-export class AdminCourseTestsComponent implements OnInit {
+export class AdminCoursequizzesComponent implements OnInit {
   courseId: number | null = null;
   course: Course | null = null;
   sections: Section[] = [];

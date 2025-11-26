@@ -1,12 +1,11 @@
 <section class="admin-page">
   <app-admin-nav></app-admin-nav>
 
-  <button (click)="back()" class="back-btn">← Trở về tổng quan</button>
+  <button (click)="back()" class="back-btn">← Quay lại</button>
   <header class="section-header">
     <div>
       <p class="eyebrow">Quản lý quiz</p>
       <h2>{{ course?.title || 'Khóa học' }}</h2>
-      <p class="muted">Tạo, chỉnh sửa quiz và câu hỏi trực tiếp theo từng bài học.</p>
     </div>
   </header>
 
@@ -62,8 +61,8 @@
       <h3>Danh sách quiz ({{ quizzes.length }})</h3>
       <div *ngIf="loadingQuizzes" class="alert info small">Đang tải danh sách quiz...</div>
       <div *ngIf="!loadingQuizzes && !quizzes.length" class="empty">Chưa có quiz nào cho bài học này.</div>
-      <div class="tests-list" *ngIf="quizzes.length">
-        <article *ngFor="let quiz of quizzes" class="test-item">
+      <div class="quizzes-list" *ngIf="quizzes.length">
+        <article *ngFor="let quiz of quizzes" class="quiz-item">
           <div class="quiz-meta">
             <strong>{{ quiz.title }}</strong>
             <p>{{ quiz.questions?.length || 0 }} câu hỏi •

@@ -237,11 +237,11 @@ interface QuestionResponsePayload {
   skill?: QuizSkill;
 }
 
-export interface CourseTest {
+export interface CourseQuiz {
   id: string;
   courseId: string;
   title: string;
-  content?: string; // simple JSON or HTML representing test
+  content?: string; // simple JSON or HTML representing quiz
 }
 
 export interface AdminPermission {
@@ -359,7 +359,7 @@ export interface UserResponse {
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private coursesKey = 'admin_courses';
-  private testsKey = 'admin_course_tests';
+  private quizzesKey = 'admin_course_quizzes';
   private permissionsKey = 'admin_permissions';
   private rolesKey = 'admin_roles';
   private usersKey = 'admin_users';
@@ -798,44 +798,44 @@ export class AdminService {
     throw new Error('API response missing result payload');
   }
 
-  private _readTestsMap(): Record<string, CourseTest[]> {
+  private _readQuizzesMap(): Record<string, CourseQuiz[]> {
     try {
-      const raw = localStorage.getItem(this.testsKey);
+      const raw = localStorage.getItem(this.quizzesKey);
       return raw ? JSON.parse(raw) : {};
     } catch (e) {
       return {};
     }
   }
 
-  clearCourseTests(courseId: number | string) {
-    const map = this._readTestsMap();
+  clearCourseQuizzes(courseId: number | string) {
+    const map = this._readQuizzesMap();
     const key = courseId.toString();
     if (map[key]) {
       delete map[key];
-      localStorage.setItem(this.testsKey, JSON.stringify(map));
+      localStorage.setItem(this.quizzesKey, JSON.stringify(map));
     }
   }
 
-  getTests(courseId: string): CourseTest[] {
-    const m = this._readTestsMap();
+  getQuizzes(courseId: string): CourseQuiz[] {
+    const m = this._readQuizzesMap();
     return m[courseId] || [];
   }
 
-  saveTest(courseId: string, test: CourseTest) {
-    const m = this._readTestsMap();
+  saveQuiz(courseId: string, quiz: CourseQuiz) {
+    const m = this._readQuizzesMap();
     if (!m[courseId]) m[courseId] = [];
-    const idx = m[courseId].findIndex(t => t.id === test.id);
-    if (idx >= 0) m[courseId][idx] = test;
-    else m[courseId].push(test);
-    localStorage.setItem(this.testsKey, JSON.stringify(m));
+    const idx = m[courseId].findIndex(t => t.id === quiz.id);
+    if (idx >= 0) m[courseId][idx] = quiz;
+    else m[courseId].push(quiz);
+    localStorage.setItem(this.quizzesKey, JSON.stringify(m));
   }
 
-  deleteTest(courseId: string, testId: string) {
-    const m = this._readTestsMap();
-    if (!m[courseId]) return;
-    m[courseId] = m[courseId].filter(t => t.id !== testId);
-    localStorage.setItem(this.testsKey, JSON.stringify(m));
-  }
+  // deleteQuiz(courseId: string, quizId: string) {
+  //   const m = this._readQuizzesMap();
+  //   if (!m[courseId]) return;
+  //   m[courseId] = m[courseId].filter(t => t.id !== quizId);
+  //   localStorage.setItem(this.quizzesKey, JSON.stringify(m));
+  // }
 
   // Permissions
   getPermissions(): AdminPermission[] {

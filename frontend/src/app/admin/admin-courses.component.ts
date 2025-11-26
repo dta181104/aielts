@@ -214,7 +214,7 @@ export class AdminCoursesComponent implements OnInit {
       .subscribe({
         next: () => {
           this.setFeedback('success', 'Đã xoá khóa học');
-          this.admin.clearCourseTests(courseId);
+          this.admin.clearCourseQuizzes(courseId);
           this.loadCourses();
         },
         error: (error: unknown) => {
@@ -224,8 +224,8 @@ export class AdminCoursesComponent implements OnInit {
       });
   }
 
-  manageTests(course: Course) {
-    this.router.navigate(['/admin', 'course', `${course.id}`, 'tests']);
+  manageQuizzes(course: Course) {
+    this.router.navigate(['/admin', 'course', `${course.id}`, 'quizzes']);
   }
 
   trackByCourseId(_index: number, course: Course) {

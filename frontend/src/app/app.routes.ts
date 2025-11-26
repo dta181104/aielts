@@ -97,7 +97,7 @@ export const routes: Routes = [
     loadComponent: () => import('./admin/admin-courses.component').then(m => m.AdminCoursesComponent)
   },
   {
-    path: 'admin/course/:id/tests',
-    loadComponent: () => import('./admin/admin-course-tests.component').then(m => m.AdminCourseTestsComponent)
+    path: 'admin/course/:id/quizzes',
+    loadComponent: () => import('./admin/admin-course-quizzes.component').then(m => m.AdminCoursequizzesComponent)
   }
 ];
