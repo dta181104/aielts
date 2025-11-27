@@ -72,6 +72,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   sectionResults: { [sectionId: string]: SectionResult } = {};
   private sectionDefinitions: Record<string, QuizSectionView> = {};
   private activeTimer: any = null;
+  private activeTimerSectionId: string | null = null;
   loading = false;
   error: string | null = null;
   private readonly defaultSectionSequence = ['listening', 'reading', 'writing', 'speaking'];
@@ -133,6 +134,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   openSection(index: number) {
     this.currentSectionIndex = index;
     const id = this.sectionOrder[index];
+    this.pauseActiveTimer();
     const sect = this.sectionDefinitions[id];
     this.quizSections = sect ? [sect] : [];
     const saved = this.getSavedQuizResult(this.selectedQuiz?.id)?.sections || {};
@@ -142,10 +144,12 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = !!sr;
     this.quizAutoScore = sr?.autoScore ?? null;
     this.latestAutoTotal = sr?.autoTotal ?? this.computeSectionTotal(this.quizSections);
+    this.resumeTimerIfNeeded(id);
   }
 
   startSection(index: number) {
     const id = this.sectionOrder[index];
+    this.pauseActiveTimer();
     if (!this.sectionStarted[id]) {
       if (!this.sectionRemaining[id]) this.sectionRemaining[id] = (this.sectionMeta[id]?.minutes ?? 0) * 60;
       this.sectionStarted[id] = true;
@@ -158,18 +162,12 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = false;
     this.quizAutoScore = null;
     this.latestAutoTotal = this.computeSectionTotal(this.quizSections);
-    this.clearActiveTimer();
-    this.activeTimer = setInterval(() => {
-      this.sectionRemaining[id] = Math.max(0, this.sectionRemaining[id] - 1);
-      if (this.sectionRemaining[id] <= 0) {
-        // auto-submit this section on timeout
-        this.submitSection(index);
-      }
-    }, 1000);
+    this.startTimerForSection(id);
   }
 
   clearActiveTimer() {
     if (this.activeTimer) { clearInterval(this.activeTimer); this.activeTimer = null; }
+    this.activeTimerSectionId = null;
   }
 
   formatTime(sec: number) {
@@ -203,6 +201,35 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.latestAutoTotal = autoTotal;
     // persist entire quiz result (including per-section map)
     this.saveQuizResult(this.selectedQuiz?.id, { autoScore, autoTotal });
+  }
+
+  private pauseActiveTimer() {
+    this.clearActiveTimer();
+  }
+
+  private startTimerForSection(sectionId: string) {
+    if (!sectionId) { return; }
+    this.clearActiveTimer();
+    this.activeTimerSectionId = sectionId;
+    this.activeTimer = setInterval(() => {
+      const remaining = Math.max(0, (this.sectionRemaining[sectionId] ?? 0) - 1);
+      this.sectionRemaining[sectionId] = remaining;
+      if (remaining <= 0) {
+        const sectionIndex = this.sectionOrder.indexOf(sectionId);
+        if (sectionIndex >= 0) {
+          this.submitSection(sectionIndex);
+        }
+      }
+    }, 1000);
+  }
+
+  private resumeTimerIfNeeded(sectionId: string) {
+    if (!sectionId) { return; }
+    const alreadyRunning = this.activeTimerSectionId === sectionId;
+    if (alreadyRunning) { return; }
+    if (this.sectionStarted[sectionId] && !this.sectionCompleted[sectionId]) {
+      this.startTimerForSection(sectionId);
+    }
   }
 
   saveQuizResult(quizId: string | number | undefined, payload?: { autoScore?: number; autoTotal?: number }) {

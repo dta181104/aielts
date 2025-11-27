@@ -5,14 +5,40 @@
       <div class="quiz-section">
         <h4>{{ section.title }}</h4>
         <div *ngFor="let q of section.questions" class="question">
-          <p class="q-text">{{ q.id }}. {{ q.prompt }}</p>
-          <div *ngIf="q.type === 'mcq'" class="options">
-            <label *ngFor="let o of q.options">
-              <input type="radio" name="q{{q.id}}" [value]="o.id" [(ngModel)]="answers[q.id]" /> {{ o.text }}
-            </label>
-            <div *ngIf="q.audioUrl" class="audio">(audio player placeholder)</div>
+          <div class="question-header">
+            <p class="q-text">
+              <span class="question-index">{{ q.id }}.</span>
+              <span *ngIf="shouldShowPrompt(q)"> {{ q.prompt }}</span>
+              <span *ngIf="!shouldShowPrompt(q) && isListeningQuestion(q)" class="placeholder">[Đang ẩn nội dung câu hỏi]</span>
+            </p>
+            <div class="question-controls" *ngIf="isListeningQuestion(q)">
+              <button type="button" class="toggle-btn" (click)="togglePrompt(q.id)">
+                {{ shouldShowPrompt(q) ? 'Ẩn câu hỏi' : 'Hiện câu hỏi' }}
+              </button>
+              <button type="button" class="toggle-btn" (click)="toggleAnswers(q.id)">
+                {{ shouldShowAnswers(q) ? 'Ẩn đáp án' : 'Hiện đáp án' }}
+              </button>
+            </div>
           </div>
-          <div *ngIf="q.type === 'text'" class="options">
+
+          <div *ngIf="q.audioUrl && isListeningQuestion(q)" class="question-audio">
+            <label>Audio:</label>
+            <audio [src]="q.audioUrl" controls preload="auto"></audio>
+          </div>
+
+          <div *ngIf="q.type === 'mcq'" class="options">
+            <label *ngFor="let o of q.options" class="option-row">
+              <input type="radio" name="q{{q.id}}" [value]="o.id" [(ngModel)]="answers[q.id]" />
+              <span class="option-letter">{{ o.id }}.</span>
+              <ng-container *ngIf="shouldShowAnswers(q); else hiddenOptionText">
+                <span class="option-text">{{ o.text }}</span>
+              </ng-container>
+              <ng-template #hiddenOptionText>
+                <span class="option-text placeholder">[Đang ẩn đáp án]</span>
+              </ng-template>
+            </label>
+          </div>
+          <div *ngIf="q.type === 'text' && shouldShowAnswers(q)" class="options">
             <textarea [(ngModel)]="textAnswers[q.id]" name="t{{q.id}}" rows="5" placeholder="Viết câu trả lời của bạn ở đây..."></textarea>
           </div>
         </div>

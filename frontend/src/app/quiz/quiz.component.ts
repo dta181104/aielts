@@ -23,6 +23,44 @@ export class QuizComponent {
   @Output() cancel = new EventEmitter<void>();
   @Output() submit = new EventEmitter<void>();
 
+  private questionVisibility: Record<string, { prompt: boolean; answers: boolean }> = {};
+
   onCancel() { this.cancel.emit(); }
   onSubmit() { this.submit.emit(); }
+
+  togglePrompt(questionId: string) {
+    const entry = this.ensureQuestionVisibility(questionId);
+    entry.prompt = !entry.prompt;
+  }
+
+  toggleAnswers(questionId: string) {
+    const entry = this.ensureQuestionVisibility(questionId);
+    entry.answers = !entry.answers;
+  }
+
+  shouldShowPrompt(question: any): boolean {
+    if (!this.isListeningQuestion(question)) {
+      return true;
+    }
+    return this.ensureQuestionVisibility(question?.id).prompt;
+  }
+
+  shouldShowAnswers(question: any): boolean {
+    if (!this.isListeningQuestion(question)) {
+      return true;
+    }
+    return this.ensureQuestionVisibility(question?.id).answers;
+  }
+
+  isListeningQuestion(question: any): boolean {
+    return (question?.skill || '').toLowerCase() === 'listening';
+  }
+
+  private ensureQuestionVisibility(questionId: string) {
+    const key = String(questionId);
+    if (!this.questionVisibility[key]) {
+      this.questionVisibility[key] = { prompt: false, answers: false };
+    }
+    return this.questionVisibility[key];
+  }
 }
