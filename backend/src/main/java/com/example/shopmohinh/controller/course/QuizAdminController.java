@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/quizzes")
@@ -42,6 +43,23 @@ public class QuizAdminController {
                 .map(q -> toQuizResponse(q, false))
                 .collect(Collectors.toList());
         return ApiResponse.<List<QuizResponse>>builder().result(result).build();
+    }
+
+    // Added: create quiz endpoint
+    @PostMapping
+    public ApiResponse<QuizResponse> create(@RequestBody @Valid QuizRequest request) {
+        LessonEntity lesson = lessonRepository.findById(request.getLessonId()).orElse(null);
+        if (lesson == null) {
+            return ApiResponse.<QuizResponse>builder().message("Lesson not found").build();
+        }
+        QuizEntity quiz = QuizEntity.builder()
+                .lesson(lesson)
+                .title(request.getTitle())
+                .passScore(request.getPassScore())
+                .duration(request.getDuration())
+                .build();
+        QuizEntity saved = quizRepository.save(quiz);
+        return ApiResponse.<QuizResponse>builder().result(toQuizResponse(saved, new ArrayList<>())).build();
     }
 
     // Added: handle GET /quizzes/{id} to return quiz with questions

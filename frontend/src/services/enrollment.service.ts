@@ -1,14 +1,47 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 import { ProductItems } from '../app/types/productItem';
+import { ApiResponse } from '../model/product.model';
+import { environment } from '../environments/environment';
+
+interface EnrolledCourseResponse {
+  id: number;
+  title: string;
+  thumbnail?: string;
+  description?: string;
+  progressPercent?: number;
+  enrolledDate?: string;
+  status?: string;
+  price?: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class EnrollmentService {
   private key = 'enrolled_courses';
   private enrolledSubject = new BehaviorSubject<ProductItems[]>(this.getEnrolled());
   enrolled$ = this.enrolledSubject.asObservable();
+  private apiBase = environment.apiUrl;
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
+
+  fetchUserEnrollments(userId: number | string): Observable<ProductItems[]> {
+    const numericId = typeof userId === 'number' ? userId : Number(userId);
+    if (!Number.isFinite(numericId) || numericId <= 0) {
+      return throwError(() => new Error('INVALID_USER_ID'));
+    }
+
+    const url = `${this.apiBase}/users/${numericId}/courses`;
+    return this.http.get<ApiResponse<EnrolledCourseResponse[]>>(url).pipe(
+      map((response) => this.mapEnrollmentResponse(response?.result ?? [])),
+      tap((list) => this.save(list)),
+      catchError((error) => {
+        console.error('fetchUserEnrollments failed', error);
+        return throwError(() => error);
+      })
+    );
+  }
 
   private getEnrolled(): ProductItems[] {
     try {
@@ -46,5 +79,25 @@ export class EnrollmentService {
 
   isEnrolled(id: number): boolean {
     return this.getEnrolled().some(i => i.id === id);
+  }
+
+  private mapEnrollmentResponse(items: EnrolledCourseResponse[]): ProductItems[] {
+    return items.map((item) => ({
+      id: item.id,
+      name: item.title,
+      description: item.description || 'Khóa học đang cập nhật nội dung.',
+      price: item.price ?? 0,
+      images: item.thumbnail
+        ? [
+            {
+              imageUrl: item.thumbnail,
+              imageMain: true,
+            },
+          ]
+        : undefined,
+      progressPercent: item.progressPercent ?? 0,
+      enrolledDate: item.enrolledDate,
+      enrollmentStatus: item.status,
+    }));
   }
 }

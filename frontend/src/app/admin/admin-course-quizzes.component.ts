@@ -406,7 +406,7 @@ export class AdminCoursequizzesComponent implements OnInit {
       options: ['', '', '', ''],
       correctOption: '',
       explanation: '',
-      skill: 'READING',
+      skill: 'LISTENING',
     };
   }
   private readonly optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];

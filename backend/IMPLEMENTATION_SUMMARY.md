@@ -12,7 +12,7 @@
 - ✅ `AttachmentEntity.java` - Tài liệu đính kèm
 - ✅ `CourseType.java` - Enum: FULL, SINGLE, TIPS
 - ✅ `CourseStatus.java` - Enum: DRAFT, PUBLISHED, ARCHIVED
-- ✅ `LessonType.java` - Enum: VIDEO, QUIZ, DOCUMENT
+- ✅ `LessonType.java` - Enum: VIDEO, DOCUMENT
 
 ### 2. Repository Layer (5 files)
 **Package:** `com.example.shopmohinh.repository.course`
@@ -117,7 +117,7 @@
 
 ### 4. Lesson Management
 - ✅ CRUD lessons trong section
-- ✅ Support 3 types: VIDEO, QUIZ, DOCUMENT
+- ✅ Support 3 types: VIDEO, DOCUMENT
 - ✅ Video URL storage
 - ✅ HTML content support
 - ✅ Duration tracking (seconds)
@@ -160,7 +160,7 @@ POST, PUT, DELETE trên tất cả resources
 1. **category** - 4 kỹ năng IELTS
 2. **course** - Khóa học với pricing, type, status
 3. **section** - Chương học, link to category
-4. **lesson** - Bài học với type (VIDEO/QUIZ/DOCUMENT)
+4. **lesson** - Bài học với type (VIDEO/DOCUMENT)
 5. **attachment** - Files đính kèm
 
 ### Relationships
@@ -191,7 +191,7 @@ Lesson (1) ──→ (N) Attachment
 - ✅ Each course has 2 sections per skill
 
 ### Lessons
-- ✅ Sample lessons with VIDEO, DOCUMENT, QUIZ types
+- ✅ Sample lessons with VIDEO, DOCUMENT types
 
 ### Attachments
 - ✅ Sample PDF and MP3 attachments
@@ -336,7 +336,7 @@ com.example.shopmohinh/
 1. **File Upload Service** - Upload thumbnails và attachments lên cloud storage
 2. **Course Enrollment** - Bảng enrollment cho học viên đăng ký khóa học
 3. **Progress Tracking** - Theo dõi tiến độ học của từng học viên
-4. **Quiz System** - Hệ thống câu hỏi và trả lời cho lesson type QUIZ
+<!-- 4. **Quiz System** - Hệ thống câu hỏi và trả lời cho lesson type QUIZ -->
 5. **Rating & Review** - Đánh giá khóa học
 6. **Payment Integration** - Tích hợp thanh toán
 7. **Certificate Generation** - Cấp chứng chỉ khi hoàn thành

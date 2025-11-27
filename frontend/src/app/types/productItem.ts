@@ -16,6 +16,9 @@ export interface ProductItems {
   createdBy?: string;
   updatedBy?: string;
   images?: ImageItem[];
+  progressPercent?: number;
+  enrolledDate?: string;
+  enrollmentStatus?: string;
 }
 
 export interface ImageItem {

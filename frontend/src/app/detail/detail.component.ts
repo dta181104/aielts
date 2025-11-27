@@ -1,14 +1,11 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule, NgIf, NgFor, DecimalPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { ProductItems } from '../types/productItem';
-import { ProductService } from '../../services/product.service';
-import { CartService } from '../../services/cart.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
 import { ButtonComponent } from '../shared/button/button.component';
+import { AdminService, Course, Section } from '../../services/admin.service';
 
 @Component({
   selector: 'app-detail',
@@ -18,14 +15,16 @@ import { ButtonComponent } from '../shared/button/button.component';
   imports: [CommonModule, NgIf, NgFor, DecimalPipe, RouterLink, ButtonComponent]
 })
 export class DetailComponent implements OnInit {
-  product?: ProductItems;
+  course?: Course;
+  sections: Section[] = [];
   private destroyRef = inject(DestroyRef);
   selectedImageUrl: string | null = null;
+  loading = false;
+  errorMessage?: string;
 
   constructor(
     private route: ActivatedRoute,
-    private productService: ProductService,
-    private cartService: CartService,
+    private adminService: AdminService,
     private notificationService: NotificationService,
     private router: Router
   ) {}
@@ -34,78 +33,90 @@ export class DetailComponent implements OnInit {
 
 
   ngOnInit(): void {
-    // Lắng nghe thay đổi param id
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
-        const id = params.get('id');
-        if (id) {
-          this.loadProduct(id);
+        const id = Number(params.get('id'));
+        if (Number.isFinite(id)) {
+          this.loadCourse(id);
+        } else {
+          this.errorMessage = 'Mã khóa học không hợp lệ.';
+          this.course = undefined;
+          this.sections = [];
         }
       });
   }
 
-  private loadProduct(id: string): void {
-    this.productService.getProductById(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+  private loadCourse(id: number): void {
+    this.loading = true;
+    this.errorMessage = undefined;
+    this.adminService
+      .getCourseDetail(id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => (this.loading = false))
+      )
       .subscribe({
-        next: (res) => {
-          this.product = res.result;
-          // set default selected image
-          this.selectedImageUrl = this.getMainImage();
+        next: (course) => {
+          this.course = course;
+          this.sections = course.sections ?? [];
+          this.selectedImageUrl = course.thumbnail || course.imageUrl || null;
         },
-        error: (err) => {
-          // If API not available, fall back to mock data so UI can be developed
-          console.warn('getProductById failed, using mock product', err);
-          this.product = this.getMockProduct(id);
-          this.selectedImageUrl = this.getMainImage();
-        }
+        error: (error) => {
+          console.error('loadCourse detail failed', error);
+          this.course = undefined;
+          this.sections = [];
+          this.selectedImageUrl = null;
+          this.errorMessage = 'Không tìm thấy thông tin khóa học.';
+        },
       });
   }
 
-  // Temporary mock product data when backend API is not ready
-  private getMockProduct(id: string): ProductItems {
-    const numId = Number(id) || 1;
-    return {
-      id: numId,
-      code: `CRS-${1000 + numId}`,
-      name: numId === 1 ? 'IELTS Foundation (0 - 5.0)' : numId === 2 ? 'IELTS Intensive (5.0 - 7.5)' : 'IELTS Band 7.5+',
-      description:
-        numId === 1 ? 'Khóa học thiết kế cho người mới bắt đầu, bao gồm 4 kỹ năng, phát âm và từ vựng cơ bản. Bao gồm bài tập và đánh giá AI.'
-        : numId === 2 ? 'Khóa học nâng cao cho những người đã có nền tảng, tập trung vào kỹ năng làm bài thi.'
-        : 'Khóa học chuyên sâu cho những người muốn đạt điểm cao.',
-      status: 1,
-      quantity: 999,
-      price: numId === 1 ? 990000 : 1490000,
-      createdBy: 'AIELTS Team',
-      updatedBy: 'AIELTS Team',
-      images: [
-        { idImage: 1, imageUrl: 'assets/courses/foundation.jpg', imageMain: true },
-      ],
-    } as ProductItems;
+  getDisplayImage(): string {
+    return this.selectedImageUrl || this.course?.thumbnail || this.course?.imageUrl || 'assets/images/default.png';
   }
 
-  getMainImage(): string {
-    const mainImg = this.product?.images?.find(img => img.imageMain);
-    return mainImg?.imageUrl ?? 'assets/images/default.png';
+  getStatusLabel(status?: string): string {
+    if (!status) {
+      return 'Đang cập nhật';
+    }
+    switch (status) {
+      case 'PUBLISHED':
+        return 'Đang mở';
+      case 'ARCHIVED':
+        return 'Ngừng tuyển sinh';
+      case 'DRAFT':
+      default:
+        return 'Sắp ra mắt';
+    }
   }
 
-onThumbnailClick(url: string | undefined) {
-  if (url) {
-    this.selectedImageUrl = url;
-  }
-}
-
-
-  get hasMultipleImages(): boolean {
-    return (this.product?.images?.length ?? 0) > 1;
+  getTypeLabel(type?: string): string {
+    if (!type) {
+      return 'Khóa học';
+    }
+    switch (type) {
+      case 'FULL':
+        return 'Full Program';
+      case 'SINGLE':
+        return 'Khóa lẻ';
+      case 'TIPS':
+        return 'Tips & Tricks';
+      default:
+        return type;
+    }
   }
 
   addToCart(): void {
-    if (!this.product) return;
-    // For course purchases we do NOT add to cart. Instead we pass the course to checkout
-    // and mark the checkout as a course-purchase flow so enrollment can be recorded after payment.
-    const item = { ...this.product } as any;
+    if (!this.course) return;
+    const item = {
+      id: this.course.id,
+      name: this.course.title,
+      description: this.course.description,
+      price: this.course.price ?? 0,
+      thumbnail: this.course.thumbnail || this.course.imageUrl,
+      courseType: this.course.courseType,
+    };
     // persist the course items for the checkout flow so payment-result can enroll them
     try {
       localStorage.setItem('checkoutCourseItems', JSON.stringify([item]));

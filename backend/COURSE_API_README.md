@@ -145,7 +145,7 @@ API CRUD đầy đủ cho hệ thống quản lý khóa học IELTS, bao gồm C
 }
 ```
 
-**Lesson Types:** `VIDEO`, `QUIZ`, `DOCUMENT`
+**Lesson Types:** `VIDEO`, `DOCUMENT`
 
 #### Get Lessons by Section ID
 - **GET** `/identity/lessons/section/{sectionId}`
@@ -283,6 +283,52 @@ API CRUD đầy đủ cho hệ thống quản lý khóa học IELTS, bao gồm C
 
 ---
 
+## 8. Enrollments (Khóa học đã đăng ký)
+
+**Endpoint:** GET `/identity/users/{userId}/courses`
+
+Description:
+- Trả về danh sách các khóa học mà user đã đăng ký (bảng `enrollment`). Mỗi item gồm thông tin tóm tắt để hiển thị trong trang dashboard học viên.
+
+Path parameters:
+- `userId` (long) — id của user cần lấy danh sách khóa học đã đăng ký.
+
+Response (200):
+- JSON wrapper `ApiResponse` với `result` là mảng các đối tượng:
+  - `id` (long) — course id
+  - `title` (string)
+  - `thumbnail` (string) — ảnh đại diện
+  - `progressPercent` (int)
+  - `enrolledDate` (string, ISO datetime)
+  - `status` (string) — trạng thái đăng ký
+
+Example request:
+- GET `/identity/users/1/courses`
+
+Example response:
+```json
+{
+  "code": 1000,
+  "message": "OK",
+  "result": [
+    {
+      "id": 1,
+      "title": "IELTS Foundation (Mất gốc)",
+      "thumbnail": "https://example.com/thumb1.jpg",
+      "progressPercent": 10,
+      "enrolledDate": "2025-11-26T10:00:00",
+      "status": "ACTIVE"
+    }
+  ]
+}
+```
+
+Notes:
+- Implementation uses a JPA projection to avoid loading full entities.
+- If you require authenticated user's courses instead of passing `userId`, consider wiring the controller to use current principal and expose `/identity/me/courses`.
+
+---
+
 ## Validation rules (Tóm tắt)
 - Quiz:
   - `title`: `@NotBlank`
@@ -342,3 +388,196 @@ Ghi chú:
 - PUT `/identity/questions/{id}` -> trả về QuestionDTO cập nhật
 
 ---
+
+## 9. Quiz Submissions (Làm bài kiểm tra)
+
+**Base URL:** `/identity`
+
+Mục đích: Các endpoint phục vụ việc học viên làm bài kiểm tra (tạo submission, lưu câu trả lời từng câu, nộp bài, lấy chi tiết và cho phép giáo viên chấm).
+
+Lưu ý: project hiện có bảng `quiz_submission` và `submission_answer`. Endpoint dưới đây giả định `server.servlet.context-path=/identity` (như cấu hình dự án) nên các đường dẫn đầy đủ bắt đầu với `/identity`.
+
+### Endpoints
+
+1) Start a submission (bắt đầu làm bài)
+- POST `/identity/quizzes/{quizId}/submissions?userId={userId}`
+- Description: Tạo record `quiz_submission` với trạng thái `DOING` và `start_time` = now.
+- Query params: `userId` (Long) — id user; trong production bạn có thể lấy user từ token JWT thay vì truyền param.
+- Response: ApiResponse<QuizSubmissionResponse>
+
+Request example:
+```
+POST /identity/quizzes/1/submissions?userId=1
+```
+Response (200):
+```json
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 10,
+    "userId": 1,
+    "quizId": 1,
+    "startTime": "2025-11-27T08:00:00",
+    "status": "DOING",
+    "score": 0.0
+  }
+}
+```
+
+2) Add or update an answer (thêm / cập nhật đáp án cho 1 câu)
+- POST `/identity/quizzes/submissions/{submissionId}/answers`
+- Request body (JSON):
+```json
+{
+  "questionId": 5,
+  "selectedOption": "A",   // cho MCQ
+  "textAnswer": "My essay answer", // cho writing
+  "audioUrl": "https://..." // cho speaking
+}
+```
+- Validation: `questionId` required. `selectedOption` là kí tự như "A"/"B" nếu là MCQ.
+- Behavior: nếu question đã có answer trong submission thì cập nhật; nếu là MCQ và question.correctOption != null thì server tự đánh `isCorrect`.
+- Response: ApiResponse<SubmissionAnswerResponse>
+
+Response example:
+```json
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 21,
+    "questionId": 5,
+    "selectedOption": "A",
+    "isCorrect": true,
+    "textAnswer": null,
+    "audioUrl": null,
+    "gradeScore": null,
+    "teacherNote": null
+  }
+}
+```
+
+3) Submit (nộp bài, hoàn tất và auto-grade cho MCQ)
+- PUT `/identity/quizzes/submissions/{submissionId}/submit`
+- Description: Đặt `submit_time`, status=`SUBMITTED`, và tính điểm tự động cho các câu MCQ (các câu không có `correctOption` như writing/speaking không được auto-grade).
+- Scoring: score = (số MCQ đúng / tổng MCQ có trong bài) * 100 (phần trăm). Lưu `score` trên `quiz_submission`.
+- Response: ApiResponse<QuizSubmissionResponse> kèm danh sách answers.
+
+Response example:
+```json
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 10,
+    "userId": 1,
+    "quizId": 1,
+    "startTime": "2025-11-27T08:00:00",
+    "submitTime": "2025-11-27T08:15:00",
+    "status": "SUBMITTED",
+    "score": 75.0,
+    "answers": [ /* array of SubmissionAnswerResponse */ ]
+  }
+}
+```
+
+4) Get submission details
+- GET `/identity/quizzes/submissions/{submissionId}`
+- Description: Lấy chi tiết `quiz_submission` kèm danh sách `submission_answer`.
+- Response: ApiResponse<QuizSubmissionResponse>
+
+5) (Optional) List submissions by quiz (admin)
+- GET `/identity/quizzes/{quizId}/submissions`
+- Response: ApiResponse<List<QuizSubmissionResponse>>
+
+6) (Optional) List submissions by user
+- GET `/identity/users/{userId}/submissions`
+- Response: ApiResponse<List<QuizSubmissionResponse>>
+
+7) (Teacher) Grade an answer / finalize grading
+- PUT `/identity/submissions/{submissionId}/answers/{answerId}/grade`
+- Body:
+```json
+{ "gradeScore": 8.5, "teacherNote": "Good structure" }
+```
+- Behavior: cập nhật `gradeScore` trên `submission_answer`; sau khi giáo viên chấm xong có thể cập nhật `quiz_submission.teacher_feedback` và `quiz_submission.status = GRADED`.
+
+8) (Teacher) Finalize grading for a submission
+- PUT `/identity/submissions/{submissionId}/grade`
+- Body:
+```json
+{ "teacherFeedback": "Overall good", "status": "GRADED" }
+```
+- Behavior: cập nhật `teacher_feedback` và `status` trên `quiz_submission`.
+
+---
+
+### DTO / Response shapes (tóm tắt)
+- SubmissionAnswerRequest
+  - questionId: Long (required)
+  - selectedOption: String (ví dụ "A")
+  - textAnswer: String
+  - audioUrl: String
+
+- SubmissionAnswerResponse
+  - id: Long
+  - questionId: Long
+  - selectedOption: String
+  - isCorrect: Boolean
+  - textAnswer: String
+  - audioUrl: String
+  - gradeScore: Double
+  - teacherNote: String
+
+- QuizSubmissionResponse
+  - id: Long
+  - userId: Long
+  - quizId: Long
+  - startTime: ISO datetime
+  - submitTime: ISO datetime
+  - score: Double (percentage)
+  - status: String (DOING | SUBMITTED | GRADED)
+  - teacherFeedback: String
+  - answers: List<SubmissionAnswerResponse>
+
+### Validation rules
+- `questionId` is required when adding an answer.
+- `selectedOption` should be one of the option keys (e.g., "A","B","C","D") for MCQ.
+- When submitting, if no MCQ answers exist the auto-score will be 0.0.
+
+### Security notes
+- Current implementation used `userId` query param for `startSubmission` for quick testing. In production, prefer to derive `userId` from the authenticated principal (JWT) to prevent spoofing.
+- Endpoints under `/identity` are subject to the project's `SecurityConfig`; if you want unauthenticated access to any endpoint, update `SecurityConfig` rules accordingly.
+
+---
+
+### Example flow (complete)
+1) Start submission:
+```
+POST /identity/quizzes/1/submissions?userId=1
+```
+2) Answer question 1 (MCQ):
+```
+POST /identity/quizzes/submissions/10/answers
+{ "questionId": 1, "selectedOption": "A" }
+```
+3) Answer question 2 (writing):
+```
+POST /identity/quizzes/submissions/10/answers
+{ "questionId": 5, "textAnswer": "My essay..." }
+```
+4) Submit:
+```
+PUT /identity/quizzes/submissions/10/submit
+```
+5) Teacher grade writing question (optional):
+```
+PUT /identity/submissions/10/answers/22/grade
+{ "gradeScore": 8.5, "teacherNote": "Nice ideas" }
+```
+6) Finalize grading:
+```
+PUT /identity/submissions/10/grade
+{ "teacherFeedback": "Good job", "status": "GRADED" }
+```

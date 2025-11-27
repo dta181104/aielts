@@ -2,6 +2,16 @@
   padding: 2.5rem 0;
 }
 
+.state-message {
+  text-align: center;
+  color: #475569;
+  margin-bottom: 1rem;
+}
+
+.state-message.error {
+  color: #b91c1c;
+}
+
 .courses-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -31,8 +41,14 @@
 .course-title { margin:0; font-size:1.06rem; font-weight:800; color:#0f172a }
 .course-desc { margin:0; color:#4b5563; font-size:0.95rem }
 .meta-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px }
+.meta-left { display:flex; flex-direction:column; gap:0.35rem; }
 .price { color: var(--primary-color, #7702FF); font-weight:800 }
 .meta-right { display:flex; gap:8px; align-items:center }
+.enrolled-date { margin:0; color:#475569; font-size:0.85rem; }
+.progress { display:flex; align-items:center; gap:0.5rem; }
+.progress-bar { width:120px; height:6px; border-radius:999px; background:#e2e8f0; overflow:hidden; }
+.progress-fill { display:block; height:100%; background:linear-gradient(90deg,#6b21a8,#7702FF); border-radius:999px; }
+.progress-label { font-size:0.85rem; font-weight:600; color:#0f172a; }
 
 .empty-text { text-align:center; color:#666 }
 

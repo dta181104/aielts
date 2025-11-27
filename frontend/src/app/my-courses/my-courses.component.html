@@ -4,20 +4,30 @@
     <p class="section-sub">Danh sách các khóa học bạn đã đăng ký</p>
   </header>
 
-  <div *ngIf="items?.length; else empty" class="courses-list">
+  <p class="state-message" *ngIf="loading">Đang tải danh sách khóa học...</p>
+  <p class="state-message error" *ngIf="!loading && errorMessage">{{ errorMessage }}</p>
+
+  <div *ngIf="items.length; else empty" class="courses-list">
     <article *ngFor="let item of items" class="course-item">
-      <!-- <div class="thumb-wrap">
-        <img [src]="item.images?.[0]?.imageUrl || 'assets/images/default.png'" alt="{{item.name}}" />
-        <span class="status-badge">Đã đăng ký</span>
-      </div> -->
+      <div class="thumb-wrap" *ngIf="item.images?.length || item.enrolledDate">
+        <img *ngIf="item.images?.length" [src]="item.images?.[0]?.imageUrl || 'assets/images/default.png'" alt="{{item.name}}" />
+        <span class="status-badge">{{ item.enrollmentStatus || 'Đang học' }}</span>
+      </div>
       <div class="course-info">
         <h3 class="course-title">{{ item.name }}</h3>
-  <p class="course-desc">{{ item.description || 'Khóa học đã đăng ký trên AIELTS' }}</p>
+        <p class="course-desc">{{ item.description || 'Khóa học đã đăng ký trên AIELTS' }}</p>
         <div class="meta-row">
-          <!-- <div class="price">{{ item.price | number }} đ</div> -->
+          <div class="meta-left">
+            <p class="enrolled-date" *ngIf="item.enrolledDate">Đăng ký: {{ item.enrolledDate | date:'dd/MM/yyyy' }}</p>
+            <div class="progress" *ngIf="item.progressPercent !== undefined">
+              <div class="progress-bar">
+                <span class="progress-fill" [style.width.%]="item.progressPercent"></span>
+              </div>
+              <span class="progress-label">{{ item.progressPercent | number:'1.0-0' }}%</span>
+            </div>
+          </div>
           <div class="meta-right">
             <app-button variant="primary" size="sm" (pressed)="goToCourse(item)">Vào khóa học</app-button>
-            <!-- <app-button variant="secondary" size="sm" (pressed)="openResources(item)">Tài liệu</app-button> -->
           </div>
         </div>
       </div>
@@ -25,6 +35,6 @@
   </div>
 
   <ng-template #empty>
-    <p class="empty-text">Bạn chưa đăng ký khóa học nào. Hãy xem <a routerLink="/courses">danh sách khóa học</a>.</p>
+    <p class="empty-text" *ngIf="!loading && !errorMessage">Bạn chưa đăng ký khóa học nào. Hãy xem <a routerLink="/courses">danh sách khóa học</a>.</p>
   </ng-template>
 </section>

@@ -87,6 +87,10 @@ export class AdminCoursesComponent implements OnInit {
   sections: Section[] = [];
   sectionLessons: Lesson[] = [];
   selectedSectionId?: number;
+  editingSectionId?: number;
+  deletingSectionId?: number;
+  editingLessonId?: number;
+  deletingLessonId?: number;
   loadingSections = false;
   loadingLessons = false;
   savingSection = false;
@@ -190,16 +194,8 @@ export class AdminCoursesComponent implements OnInit {
     this.sections = [];
     this.sectionLessons = [];
     this.selectedSectionId = undefined;
-    this.sectionForm.reset({ title: '', orderIndex: null });
-    this.lessonForm.reset({
-      sectionId: null,
-      title: '',
-      type: 'VIDEO',
-      videoUrl: '',
-      content: '',
-      duration: null,
-    });
-    this.updateSelectedSection(null);
+    this.resetSectionForm();
+    this.resetLessonForm(false);
   }
 
   editCourse(course: Course) {
@@ -297,22 +293,26 @@ export class AdminCoursesComponent implements OnInit {
         value.orderIndex === null || value.orderIndex === undefined ? undefined : Number(value.orderIndex),
     };
 
+    const isUpdating = Boolean(this.editingSectionId);
     this.savingSection = true;
-    this.admin
-      .createSection(payload)
+    const request$ = isUpdating
+      ? this.admin.updateSection(Number(this.editingSectionId), payload)
+      : this.admin.createSection(payload);
+
+    request$
       .pipe(
         take(1),
         finalize(() => (this.savingSection = false))
       )
       .subscribe({
         next: () => {
-          this.sectionForm.reset({ title: '', orderIndex: null });
-          this.setFeedback('success', 'Đã thêm chương mới');
+          this.resetSectionForm();
+          this.setFeedback('success', isUpdating ? 'Đã cập nhật chương' : 'Đã thêm chương mới');
           this.loadSections(Number(this.editingCourse?.id));
         },
         error: (error: unknown) => {
           console.error('saveSection failed', error);
-          this.setFeedback('error', 'Không thể tạo chương.');
+          this.setFeedback('error', isUpdating ? 'Không thể cập nhật chương.' : 'Không thể tạo chương.');
         },
       });
   }
@@ -345,29 +345,29 @@ export class AdminCoursesComponent implements OnInit {
       duration: value.duration === null || value.duration === undefined ? undefined : Number(value.duration),
     };
 
+    const isUpdating = Boolean(this.editingLessonId);
     this.savingLesson = true;
-    this.admin
-      .createLesson(payload)
+    const request$ = isUpdating
+      ? this.admin.updateLesson(Number(this.editingLessonId), payload)
+      : this.admin.createLesson(payload);
+
+    request$
       .pipe(
         take(1),
         finalize(() => (this.savingLesson = false))
       )
       .subscribe({
         next: () => {
-          this.lessonForm.patchValue({
-            title: '',
-            videoUrl: '',
-            content: '',
-            duration: null,
-          });
-          if (value.sectionId) {
-            this.loadLessons(value.sectionId);
+          const sectionId = Number(value.sectionId);
+          this.resetLessonForm(true);
+          if (sectionId) {
+            this.loadLessons(sectionId);
           }
-          this.setFeedback('success', 'Đã thêm bài học');
+          this.setFeedback('success', isUpdating ? 'Đã cập nhật bài học' : 'Đã thêm bài học');
         },
         error: (error: unknown) => {
           console.error('saveLesson failed', error);
-          this.setFeedback('error', 'Không thể tạo bài học.');
+          this.setFeedback('error', isUpdating ? 'Không thể cập nhật bài học.' : 'Không thể tạo bài học.');
         },
       });
   }
@@ -379,6 +379,108 @@ export class AdminCoursesComponent implements OnInit {
     this.selectedSectionId = section.id;
     this.lessonForm.patchValue({ sectionId: section.id }, { emitEvent: false });
     this.updateSelectedSection(section.id);
+  }
+
+  editLesson(lesson: Lesson) {
+    if (!lesson?.id) {
+      return;
+    }
+    this.editingLessonId = lesson.id;
+    const sectionId = lesson.sectionId ?? this.selectedSectionId ?? null;
+    this.lessonForm.patchValue(
+      {
+        sectionId,
+        title: lesson.title || '',
+        type: lesson.type || 'VIDEO',
+        videoUrl: lesson.videoUrl || '',
+        content: lesson.content || '',
+        duration: lesson.duration ?? null,
+      },
+      { emitEvent: false }
+    );
+    this.updateSelectedSection(sectionId);
+  }
+
+  cancelLessonEdit() {
+    this.resetLessonForm(true);
+  }
+
+  deleteLesson(lesson: Lesson) {
+    if (!lesson?.id || !confirm(`Xoá bài học "${lesson.title}"?`)) {
+      return;
+    }
+    this.deletingLessonId = lesson.id;
+    this.admin
+      .deleteLesson(lesson.id)
+      .pipe(
+        take(1),
+        finalize(() => (this.deletingLessonId = undefined))
+      )
+      .subscribe({
+        next: () => {
+          if (this.editingLessonId === lesson.id) {
+            this.resetLessonForm(true);
+          }
+          this.setFeedback('success', 'Đã xoá bài học');
+          if (lesson.sectionId) {
+            this.loadLessons(lesson.sectionId);
+          }
+        },
+        error: (error: unknown) => {
+          console.error('deleteLesson failed', error);
+          this.setFeedback('error', 'Không thể xoá bài học.');
+        },
+      });
+  }
+
+  editSection(section: Section) {
+    if (!section?.id) {
+      return;
+    }
+    this.editingSectionId = section.id;
+    this.sectionForm.patchValue({
+      title: section.title || '',
+      orderIndex: section.orderIndex ?? null,
+    });
+  }
+
+  cancelSectionEdit() {
+    this.resetSectionForm();
+  }
+
+  deleteSection(section: Section) {
+    if (!section?.id || !confirm(`Xoá chương "${section.title}"?`)) {
+      return;
+    }
+    this.deletingSectionId = section.id;
+    this.admin
+      .deleteSection(section.id)
+      .pipe(
+        take(1),
+        finalize(() => (this.deletingSectionId = undefined))
+      )
+      .subscribe({
+        next: () => {
+          if (this.selectedSectionId === section.id) {
+            this.updateSelectedSection(null);
+          }
+          if (this.editingSectionId === section.id) {
+            this.resetSectionForm();
+          }
+          const editingLessonSectionId = this.lessonForm.get('sectionId')?.value;
+          if (this.editingLessonId && editingLessonSectionId === section.id) {
+            this.resetLessonForm(false);
+          }
+          this.setFeedback('success', 'Đã xoá chương');
+          if (this.editingCourse?.id) {
+            this.loadSections(Number(this.editingCourse.id));
+          }
+        },
+        error: (error: unknown) => {
+          console.error('deleteSection failed', error);
+          this.setFeedback('error', 'Không thể xoá chương.');
+        },
+      });
   }
 
   refreshStructure() {
@@ -473,7 +575,7 @@ export class AdminCoursesComponent implements OnInit {
             this.selectedSectionId = undefined;
             this.sectionLessons = [];
             this.lessonForm.patchValue({ sectionId: null }, { emitEvent: false });
-            this.updateSelectedSection(null);
+            this.resetLessonForm(false);
             return;
           }
 
@@ -556,5 +658,30 @@ export class AdminCoursesComponent implements OnInit {
 
     this.selectedSectionId = numericId;
     this.loadLessons(numericId);
+  }
+
+  private resetSectionForm() {
+    this.editingSectionId = undefined;
+    this.sectionForm.reset({ title: '', orderIndex: null });
+  }
+
+  private resetLessonForm(keepSection = true) {
+    const sectionId = keepSection ? this.lessonForm.get('sectionId')?.value ?? this.selectedSectionId ?? null : null;
+    this.editingLessonId = undefined;
+    this.lessonForm.reset(
+      {
+        sectionId,
+        title: '',
+        type: 'VIDEO',
+        videoUrl: '',
+        content: '',
+        duration: null,
+      },
+      { emitEvent: false }
+    );
+
+    if (!sectionId) {
+      this.updateSelectedSection(null);
+    }
   }
 }

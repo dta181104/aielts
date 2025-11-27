@@ -1,24 +1,30 @@
 <section class="quiz-list container">
   <div class="header">
     <app-button variant="ghost" (pressed)="goBack()">← Quay lại</app-button>
-    <h2>Danh sách bài kiểm tra - {{ course?.name }}</h2>
+    <h2>Danh sách bài kiểm tra - {{ courseName || 'Khóa học' }}</h2>
   </div>
 
-  <div *ngIf="quizzes.length; else none">
+  <p *ngIf="loading" class="state">Đang tải danh sách bài kiểm tra...</p>
+  <p *ngIf="!loading && error" class="state state--error">{{ error }}</p>
+
+  <ng-container *ngIf="!loading && !error && quizzes.length; else none">
     <ul class="quiz-list">
-      <li *ngFor="let q of quizzes">
+      <li *ngFor="let q of quizzes; trackBy: trackByQuiz">
         <div class="quiz-row" role="button" tabindex="0" (click)="openQuiz(q)" (keydown.enter)="openQuiz(q)">
-          <div class="quiz-title">{{ q.title }}</div>
+          <div class="quiz-info">
+            <div class="quiz-title">{{ q.title }}</div>
+            <div class="quiz-meta">{{ q.questionCount }} câu hỏi • {{ q.duration ? (q.duration + ' phút') : 'Không giới hạn thời gian' }}</div>
+            <div class="quiz-lesson">Bài học: {{ q.lessonTitle }}<span *ngIf="q.sectionTitle"> · {{ q.sectionTitle }}</span></div>
+          </div>
           <div class="quiz-actions">
-            <!-- stopPropagation so the button press doesn't fire the row click twice -->
             <app-button variant="primary" (pressed)="$event.stopPropagation(); openQuiz(q)">Làm bài</app-button>
           </div>
         </div>
       </li>
     </ul>
-  </div>
+  </ng-container>
 
   <ng-template #none>
-    <p>Không có bài kiểm tra cho khóa học này.</p>
+    <p class="state">Không tìm thấy bài kiểm tra nào cho khóa học này.</p>
   </ng-template>
 </section>

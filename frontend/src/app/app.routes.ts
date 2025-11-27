@@ -67,12 +67,12 @@ export const routes: Routes = [
     loadComponent: () => import('./course-player/course-player.component').then(m => m.CoursePlayerComponent)
   },
   {
-    path: 'course/:id/quizzes',
-    loadComponent: () => import('./course-quizzes').then(m => m.QuizListComponent)
-  },
-  {
     path: 'course/:id/quizzes/:quizId',
     loadComponent: () => import('./course-quizzes').then(m => m.QuizTakeComponent)
+  },
+  {
+    path: 'course/:id/quizzes',
+    loadComponent: () => import('./course-quizzes').then(m => m.QuizListComponent)
   },
   // Admin pages (simple local, no auth guard for now)
   {

@@ -383,8 +383,7 @@ INSERT INTO section (course_id, category_id, title, order_index) VALUES
 
 INSERT INTO lesson (section_id, title, type, video_url, content, duration, order_index) VALUES 
 (1, 'Bài 1.1: Bảng phiên âm IPA là gì?', 'VIDEO', 'https://video-link.com/ipa.mp4', '<p>Hôm nay học về nguyên âm...</p>', 600, 1),
-(1, 'Bài 1.2: Tài liệu từ vựng chủ đề Family', 'DOCUMENT', NULL, '<p>Danh sách từ vựng cần nhớ...</p>', 0, 2),
-(1, 'Bài 1.3: Bài tập nghe chép chính tả', 'QUIZ', NULL, '<p>Nghe và điền vào chỗ trống...</p>', 900, 3);
+(1, 'Bài 1.2: Tài liệu từ vựng chủ đề Family', 'DOCUMENT', NULL, '<p>Danh sách từ vựng cần nhớ...</p>', 0, 2);
 
 INSERT INTO lesson (section_id, title, type, video_url, content, duration, order_index) VALUES 
 (13, 'Lesson 1: Các dạng biểu đồ Line Graph', 'VIDEO', 'https://video-link.com/linegraph.mp4', '<p>Phân tích xu hướng tăng giảm...</p>', 1200, 1);

@@ -2,22 +2,25 @@
   <div class="header">
     <app-button variant="ghost" (pressed)="onCancel()">← Quay lại</app-button>
     <div class="header-title">
-      <h2>{{ selectedQuiz?.title }} <span class="muted">- {{ course?.name }}</span></h2>
-      <div class="quiz-meta">{{ quizSections.length }} phần · Tổng điểm tự chấm: {{ quizAutoScore ?? 0 }} / {{ quizAutoTotal }}</div>
+      <h2>{{ selectedQuiz?.title }} <span class="muted">- {{ courseName || 'Khóa học' }}</span></h2>
+      <div class="quiz-meta">{{ sectionOrder.length }} phần · Điểm tự chấm gần nhất: {{ quizAutoScore ?? 0 }} / {{ quizAutoTotal }}</div>
     </div>
   </div>
 
-  <div *ngIf="selectedQuiz">
+  <div *ngIf="loading" class="state state-loading">Đang tải chi tiết bài kiểm tra...</div>
+  <div *ngIf="!loading && error" class="state state-error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error && selectedQuiz">
     <div class="sections-overview">
       <h3>Các phần trong bài thi</h3>
       <ul class="section-list">
         <li *ngFor="let sid of sectionOrder; let i = index" class="section-item">
           <div class="section-info">
-            <div class="section-title">{{ sectionMeta[sid].title }}</div>
-            <div class="section-desc">{{ sectionMeta[sid].desc }}</div>
+            <div class="section-title">{{ sectionMeta[sid]?.title }}</div>
+            <div class="section-desc">{{ sectionMeta[sid]?.desc }}</div>
           </div>
           <div class="section-actions">
-            <div class="section-time">Thời lượng: {{ sectionMeta[sid].minutes }} phút</div>
+            <div class="section-time">Thời lượng: {{ sectionMeta[sid]?.minutes ?? 0 }} phút</div>
             <div *ngIf="sectionCompleted[sid]" class="section-status">Hoàn thành</div>
             <div *ngIf="!sectionCompleted[sid] && sectionStarted[sid]" class="section-status">Đang làm — còn: {{ formatTime(sectionRemaining[sid]) }}</div>
             <app-button *ngIf="!sectionStarted[sid] && !sectionCompleted[sid]" variant="primary" (pressed)="startSection(i)">Bắt đầu</app-button>
@@ -28,7 +31,7 @@
       </ul>
     </div>
 
-      <div *ngIf="currentSectionIndex!==null" class="section-container" style="margin-top:16px">
+    <div *ngIf="currentSectionIndex!==null" class="section-container" style="margin-top:16px">
       <h4>{{ sectionMeta[sectionOrder[currentSectionIndex]]?.title }} — Thời gian còn lại: {{ formatTime(sectionRemaining[sectionOrder[currentSectionIndex]]) }}</h4>
       <app-quiz
         [quizSections]="quizSections"

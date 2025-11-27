@@ -3,10 +3,10 @@
     <div class="header-left">
       <app-button variant="ghost" size="md" (pressed)="back()">← Quay lại</app-button>
       <div class="course-title-wrap">
-        <h2 class="course-title">{{ course?.name || 'Khóa học' }}</h2>
+        <h2 class="course-title">{{ courseDetail?.title || course?.name || 'Khóa học' }}</h2>
         <div class="course-meta">
-          <div class="meta-item">Số bài học: {{ lessons.length }}</div>
-          <!-- <div class="meta-item">Trạng thái: {{ quizSubmitted ? 'Đã làm bài kiểm tra' : 'Chưa làm' }}</div> -->
+          <div class="meta-item">Chương: {{ sections.length }}</div>
+          <div class="meta-item">Bài học: {{ totalLessonCount }}</div>
         </div>
         <div class="progress">
           <div class="progress-bar" [style.width.%]="progressPercent"></div>
@@ -14,61 +14,76 @@
       </div>
     </div>
     <div class="player-actions">
-      <app-button variant="secondary" (pressed)="openQuizzes()">Danh sách bài kiểm tra</app-button>
+      <app-button variant="secondary" (pressed)="goToQuizList()">Danh sách bài kiểm tra</app-button>
     </div>
   </div>
 
   <div class="player-grid">
     <aside class="lessons-list">
       <div class="lessons-head">
-        <h3>Danh sách bài học</h3>
-        <div class="lessons-actions-inline">
-          <!-- <app-button variant="primary" size="sm" (pressed)="openQuizzes()">Làm bài kiểm tra</app-button> -->
-        </div>
+        <h3>Danh sách chương & bài học</h3>
       </div>
-      <ul>
-        <li *ngFor="let l of lessons" [class.active]="selectedLesson?.id === l.id" (click)="selectLesson(l)">
-          <div>
-            <div class="lesson-title">{{ l.title }}</div>
-            <div class="lesson-meta">{{ l.duration }}</div>
+
+      <ng-container *ngIf="!structureLoading && sections.length; else lessonsState">
+        <div class="section-block" *ngFor="let section of sections">
+          <div class="section-header">
+            <h4>{{ section.title }}</h4>
+            <span class="section-count">{{ section.lessons.length || 0 }} bài học</span>
           </div>
-          <div class="lesson-actions-inline">
-            <span class="lesson-pill">{{ l.duration }}</span>
-          </div>
-        </li>
-      </ul>
+          <ul>
+            <li *ngFor="let l of section.lessons"
+                [class.active]="selectedLesson?.id === l.id"
+                (click)="selectLesson(l)">
+              <div>
+                <div class="lesson-title">{{ l.title }}</div>
+                <div class="lesson-meta">{{ formatLessonDuration(l) }}</div>
+              </div>
+              <div class="lesson-actions-inline">
+                <span class="lesson-pill">{{ l.type || 'Bài học' }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </ng-container>
+
+      <ng-template #lessonsState>
+        <p *ngIf="structureLoading" class="state-text">Đang tải nội dung khóa học...</p>
+        <p *ngIf="!structureLoading && structureError" class="state-text state-error">{{ structureError }}</p>
+        <p *ngIf="!structureLoading && !structureError" class="state-text">Chưa có bài học nào.</p>
+      </ng-template>
     </aside>
 
     <main class="lesson-content">
-      <app-quiz *ngIf="showQuiz"
-        [quizSections]="quizSections"
-        [answers]="answers"
-        [textAnswers]="textAnswers"
-        [selectedQuiz]="selectedQuiz"
-        [quizSubmitted]="quizSubmitted"
-        [quizAutoScore]="quizAutoScore"
-        [quizAutoTotal]="quizAutoTotal"
-        (cancel)="showQuiz = false"
-        (submit)="submitQuiz()">
-      </app-quiz>
-
-      <ng-template #lessonView>
-        <div *ngIf="selectedLesson; else empty">
+      <ng-container *ngIf="selectedLesson; else empty">
         <h3>{{ selectedLesson.title }}</h3>
+        <p class="lesson-section" *ngIf="selectedLesson.sectionTitle">Chương: {{ selectedLesson.sectionTitle }}</p>
         <div class="video-placeholder">
-          <!-- Replace with <video> or embed when available -->
           <img src="assets/images/video_placeholder.png" alt="video" />
         </div>
-        <div class="lesson-text">{{ selectedLesson.content }}</div>
-        <div class="lesson-actions" style="margin-top:12px">
-          <app-button variant="primary" (pressed)="openQuizzes()">Làm bài kiểm tra</app-button>
-        </div>
-      </div>
+        <div class="lesson-text">{{ selectedLesson.content || 'Nội dung bài học đang được cập nhật.' }}</div>
 
-      </ng-template>
+        <section class="lesson-quizzes">
+          <div class="lesson-quizzes__header">
+            <h4>Bài kiểm tra</h4>
+            <app-button variant="ghost" size="sm" (pressed)="goToQuizList()">Xem tất cả</app-button>
+          </div>
+          <p *ngIf="quizLoading" class="state-text">Đang tải bài kiểm tra...</p>
+          <p *ngIf="!quizLoading && quizError" class="state-text state-error">{{ quizError }}</p>
+          <ul *ngIf="!quizLoading && !quizError && quizzes.length">
+            <li *ngFor="let quiz of quizzes">
+              <div>
+                <div class="quiz-title">{{ quiz.title }}</div>
+                <div class="quiz-meta">{{ quiz.questions?.length || 0 }} câu hỏi • {{ quiz.duration ? (quiz.duration + ' phút') : 'Không giới hạn' }}</div>
+              </div>
+              <app-button variant="secondary" size="sm" (pressed)="goToQuiz(quiz)">Làm bài</app-button>
+            </li>
+          </ul>
+          <p *ngIf="!quizLoading && !quizError && !quizzes.length" class="state-text">Chưa có bài kiểm tra cho bài học này.</p>
+        </section>
+      </ng-container>
 
       <ng-template #empty>
-        <p>Chọn một bài học để bắt đầu.</p>
+        <p class="state-text">Chọn một bài học để bắt đầu.</p>
       </ng-template>
     </main>
   </div>

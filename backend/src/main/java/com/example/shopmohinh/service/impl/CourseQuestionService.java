@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import jakarta.annotation.PostConstruct;
@@ -117,13 +118,107 @@ public class CourseQuestionService {
                 .quiz(quiz)
                 .content(request.getContent())
                 .audioUrl(request.getAudioUrl())
-                .options(optionsJson)
-                .correctOption(request.getCorrectOption() == null ? null : QuestionOptionUtils.toLetter(request.getCorrectOption()))
                 .explanation(request.getExplanation())
                 .skill(request.getSkill())
                 .build();
+        applyOptionsPayload(entity, request, false);
         QuestionEntity saved = questionRepository.save(entity);
         return toResponse(saved);
+    }
+
+    public List<QuestionResponse> listQuestions(Long quizId) {
+        QuizEntity quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        return questionRepository.findByQuiz(quiz).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public QuestionResponse getQuestion(Long questionId) {
+        QuestionEntity entity = questionRepository.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        return toResponse(entity);
+    }
+
+    @Transactional
+    public QuestionResponse createQuestion(Long quizId, CourseQuestionRequest request) {
+        QuizEntity quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        QuestionEntity entity = QuestionEntity.builder()
+                .quiz(quiz)
+                .content(request.getContent())
+                .audioUrl(request.getAudioUrl())
+                .explanation(request.getExplanation())
+                .skill(request.getSkill())
+                .build();
+        applyOptionsPayload(entity, request, false);
+        QuestionEntity saved = questionRepository.save(entity);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public QuestionResponse updateQuestion(Long questionId, CourseQuestionRequest request) {
+        QuestionEntity entity = questionRepository.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        if (request.getContent() != null) {
+            entity.setContent(request.getContent());
+        }
+        if (request.getAudioUrl() != null) {
+            entity.setAudioUrl(request.getAudioUrl());
+        }
+        if (request.getExplanation() != null) {
+            entity.setExplanation(request.getExplanation());
+        }
+        if (request.getSkill() != null) {
+            entity.setSkill(request.getSkill());
+        }
+        applyOptionsPayload(entity, request, true);
+        QuestionEntity saved = questionRepository.save(entity);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void deleteQuestion(Long questionId) {
+        QuestionEntity entity = questionRepository.findById(questionId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        questionRepository.delete(entity);
+    }
+
+    private void applyOptionsPayload(QuestionEntity entity, CourseQuestionRequest request, boolean isUpdate) {
+        if (request.getOptions() != null) {
+            if (CollectionUtils.isEmpty(request.getOptions())) {
+                entity.setOptions(null);
+                entity.setCorrectOption(null);
+                if (request.getCorrectOption() != null && !request.getCorrectOption().trim().isEmpty()) {
+                    throw new AppException(ErrorCode.INVALID_KEY);
+                }
+                return;
+            }
+            entity.setOptions(QuestionOptionUtils.optionsToJson(request.getOptions()));
+            String normalized = QuestionOptionUtils.toLetter(request.getCorrectOption());
+            if (normalized == null) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            entity.setCorrectOption(normalized);
+            return;
+        }
+
+        if (request.getCorrectOption() != null) {
+            if (entity.getOptions() == null) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            String normalized = QuestionOptionUtils.toLetter(request.getCorrectOption());
+            if (normalized == null) {
+                throw new AppException(ErrorCode.INVALID_KEY);
+            }
+            entity.setCorrectOption(normalized);
+            return;
+        }
+
+        if (!isUpdate) {
+            entity.setOptions(null);
+            entity.setCorrectOption(null);
+        }
     }
 
     private QuestionResponse toResponse(QuestionEntity q) {

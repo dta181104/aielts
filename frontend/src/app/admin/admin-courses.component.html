@@ -137,7 +137,7 @@
 
     <div class="structure-columns">
       <div class="structure-column">
-        <h4>Thêm chương</h4>
+        <h4>{{ editingSectionId ? 'Cập nhật chương' : 'Thêm chương' }}</h4>
         <form [formGroup]="sectionForm" (ngSubmit)="saveSection()">
           <label>
             <span>Tiêu đề *</span>
@@ -149,7 +149,10 @@
           </label>
           <div class="actions">
             <button type="submit" class="btn-primary" [disabled]="savingSection">
-              {{ savingSection ? 'Đang tạo...' : 'Thêm chương' }}
+              {{ savingSection ? (editingSectionId ? 'Đang lưu...' : 'Đang tạo...') : editingSectionId ? 'Cập nhật chương' : 'Thêm chương' }}
+            </button>
+            <button *ngIf="editingSectionId" type="button" class="btn-secondary" (click)="cancelSectionEdit()" [disabled]="savingSection">
+              Hủy
             </button>
           </div>
         </form>
@@ -160,7 +163,13 @@
               <strong>{{ section.title }}</strong>
               <p class="muted">Thứ tự: {{ section.orderIndex ?? '—' }} • {{ section.lessons?.length || 0 }} bài học</p>
             </div>
-            <button type="button" (click)="selectSection(section)">Chọn</button>
+            <div class="section-actions">
+              <button type="button" (click)="selectSection(section)">Chọn</button>
+              <button type="button" (click)="editSection(section)">Sửa</button>
+              <button type="button" class="danger" (click)="deleteSection(section)" [disabled]="deletingSectionId === section.id">
+                {{ deletingSectionId === section.id ? 'Đang xoá...' : 'Xoá' }}
+              </button>
+            </div>
           </article>
         </div>
         <ng-template #emptySections>
@@ -169,7 +178,7 @@
       </div>
 
       <div class="structure-column">
-        <h4>Thêm bài học</h4>
+        <h4>{{ editingLessonId ? 'Cập nhật bài học' : 'Thêm bài học' }}</h4>
         <form [formGroup]="lessonForm" (ngSubmit)="saveLesson()">
           <label>
             <span>Chương</span>
@@ -202,7 +211,10 @@
           </label>
           <div class="actions">
             <button type="submit" class="btn-primary" [disabled]="savingLesson">
-              {{ savingLesson ? 'Đang tạo...' : 'Thêm bài học' }}
+              {{ savingLesson ? (editingLessonId ? 'Đang lưu...' : 'Đang tạo...') : editingLessonId ? 'Cập nhật bài học' : 'Thêm bài học' }}
+            </button>
+            <button *ngIf="editingLessonId" type="button" class="btn-secondary" (click)="cancelLessonEdit()" [disabled]="savingLesson">
+              Hủy
             </button>
           </div>
         </form>
@@ -214,6 +226,12 @@
             <div>
               <strong>{{ lesson.title }}</strong>
               <p class="muted">Loại: {{ lesson.type }} • Thời lượng: {{ lesson.duration || '—' }} phút</p>
+            </div>
+            <div class="lesson-actions">
+              <button type="button" (click)="editLesson(lesson)">Sửa</button>
+              <button type="button" class="danger" (click)="deleteLesson(lesson)" [disabled]="deletingLessonId === lesson.id">
+                {{ deletingLessonId === lesson.id ? 'Đang xoá...' : 'Xoá' }}
+              </button>
             </div>
           </article>
         </div>

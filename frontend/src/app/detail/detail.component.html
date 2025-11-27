@@ -1,63 +1,50 @@
-<div *ngIf="product; else loading" class="detail-container">
+<div *ngIf="course as detail; else stateBlock" class="detail-container">
   <div class="detail-header">
-  <app-button variant="ghost" (pressed)="back()">← Quay lại</app-button>
+    <app-button variant="ghost" (pressed)="back()">← Quay lại</app-button>
     <div class="detail-badges">
-      <span class="badge-level">Khóa học</span>
-  <span class="badge-status">{{ product.status === 1 ? 'Đang mở' : 'Tạm đóng' }}</span>
+      <span class="badge-level">{{ getTypeLabel(detail.courseType) }}</span>
+      <span class="badge-status">{{ getStatusLabel(detail.status) }}</span>
     </div>
   </div>
 
-  <!-- Hình ảnh sản phẩm -->
   <div class="image-section">
-  <img [src]="selectedImageUrl || getMainImage()" [alt]="product.name" class="main-image" />
-
-    <div *ngIf="hasMultipleImages" class="thumbnail-list">
-      <img *ngFor="let img of product.images" [src]="img.imageUrl" [alt]="product.name"
-        [class.active]="img.imageMain || selectedImageUrl === img.imageUrl" class="thumbnail"
-        (click)="onThumbnailClick(img.imageUrl!)" />
-    </div>
+    <img [src]="getDisplayImage()" [alt]="detail.title" class="main-image" />
   </div>
 
-  <!-- Thông tin sản phẩm -->
   <div class="info-section">
-  <h2 class="product-name">{{ product.name }}</h2>
-  <p class="product-description">{{ product.description }}</p>
+    <h2 class="product-name">{{ detail.title }}</h2>
+    <p class="product-description">{{ detail.description || 'Nội dung khóa học đang được cập nhật.' }}</p>
 
     <ul class="product-meta">
-  <li><strong>Code:</strong> {{ product.code }}</li>
-  <li><strong>Số lượng:</strong> {{ product.quantity || 'N/A' }}</li>
+      <li *ngIf="detail.levelName"><strong>Level:</strong> {{ detail.levelName }}</li>
+      <li *ngIf="detail.targetBand"><strong>Target band:</strong> {{ detail.targetBand }}</li>
+      <li><strong>Loại khóa:</strong> {{ getTypeLabel(detail.courseType) }}</li>
+      <li *ngIf="detail.createdDate"><strong>Ngày tạo:</strong> {{ detail.createdDate | date:'dd/MM/yyyy' }}</li>
     </ul>
 
     <div class="price-row">
-  <h3 class="price">{{ product.price | number:'1.0-0' }} đ</h3>
+      <h3 class="price">{{ detail.price || 0 | number:'1.0-0' }} đ</h3>
       <div class="actions">
         <app-button variant="primary" size="md" (pressed)="addToCart()">Đăng ký ngay</app-button>
-  <app-button variant="secondary" size="sm" (pressed)="back()">Xem các khóa khác</app-button>
+        <app-button variant="secondary" size="sm" (pressed)="back()">Xem các khóa khác</app-button>
       </div>
     </div>
 
-    <div class="features">
-      <h4>Điểm nổi bật</h4>
-      <ul>
-        <li>Hơn 50 bài học thực hành</li>
-        <li>Đánh giá & phản hồi cá nhân</li>
-        <li>Tài liệu tải về và bài tập kèm theo</li>
-      </ul>
-    </div>
-
-    <!-- <div class="instructor">
-      <h4>Giảng viên</h4>
-      <div class="instructor-card">
-        <img src="assets/images/login.png" alt="Giảng viên" />
-        <div>
-          <div class="instructor-name">AIELTS Team</div>
-          <div class="instructor-desc">Giảng viên & chuyên gia luyện thi IELTS</div>
-        </div>
+    <div class="features" *ngIf="sections.length">
+      <h4>Nội dung khóa học</h4>
+      <div class="section-list">
+        <article *ngFor="let section of sections" class="section-item">
+          <div>
+            <strong>{{ section.title }}</strong>
+            <p>{{ section.lessons?.length || 0 }} bài học • Thứ tự: {{ section.orderIndex ?? '—' }}</p>
+          </div>
+        </article>
       </div>
-    </div> -->
+    </div>
   </div>
 </div>
 
-<ng-template #loading>
-  <p class="loading-text">Loading course detail...</p>
+<ng-template #stateBlock>
+  <p class="loading-text" *ngIf="loading">Đang tải thông tin khóa học...</p>
+  <p class="loading-text error" *ngIf="!loading">{{ errorMessage || 'Không tìm thấy khóa học.' }}</p>
 </ng-template>
