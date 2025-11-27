@@ -49,4 +49,49 @@
       <button type="submit" class="btn btn--primary">{{ submitLabel }}</button>
     </div>
   </form>
+
+  <section *ngIf="quizSubmitted" class="quiz-review">
+    <div class="review-header">
+      <h4>Kết quả chi tiết</h4>
+      <button type="button" class="toggle-review-btn" (click)="toggleReviewVisibility()">
+        {{ reviewExpanded ? 'Ẩn kết quả chi tiết' : 'Hiển thị kết quả chi tiết' }}
+      </button>
+    </div>
+    <ng-container *ngIf="reviewExpanded">
+      <div class="review-card" *ngFor="let section of quizSections">
+        <h5>{{ section.title }}</h5>
+        <div class="review-question" *ngFor="let q of section.questions">
+        <div class="review-question-header">
+          <span class="rq-index">{{ q.id }}.</span>
+          <span class="rq-text">{{ q.prompt }}</span>
+        </div>
+        <div class="review-row">
+          <span class="review-label">Đáp án của bạn:</span>
+          <span class="review-value">{{ getUserAnswerDisplay(q) }}</span>
+        </div>
+        <div *ngIf="q.type === 'mcq' && q.options?.length" class="review-options">
+          <div
+            *ngFor="let o of q.options"
+            class="review-option"
+            [class.correct]="q.correctOptionId && q.correctOptionId === o.id"
+            [class.selected]="answers[q.id] === o.id"
+          >
+            <span class="opt-letter">{{ o.id }}.</span>
+            <span class="opt-text">{{ o.text }}</span>
+            <span class="badge" *ngIf="q.correctOptionId === o.id">Đáp án đúng</span>
+            <span class="badge badge--secondary" *ngIf="answers[q.id] === o.id">Bạn đã chọn</span>
+          </div>
+        </div>
+        <div class="review-row" *ngIf="q.type === 'mcq' && q.correctOptionId">
+          <span class="review-label">Đáp án đúng:</span>
+          <span class="review-value">{{ getOptionDisplay(q, q.correctOptionId) }}</span>
+        </div>
+        <div class="review-row" *ngIf="q.explanation">
+          <span class="review-label">Giải thích:</span>
+          <span class="review-value">{{ q.explanation }}</span>
+        </div>
+        </div>
+      </div>
+    </ng-container>
+  </section>
 </section>

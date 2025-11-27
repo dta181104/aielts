@@ -22,6 +22,7 @@ interface QuizQuestionView {
   audioUrl?: string;
   correctOptionId?: string;
   skill?: string;
+  explanation?: string;
 }
 
 interface QuizSectionView {
@@ -578,6 +579,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
       audioUrl: question.audioUrl,
       correctOptionId,
       skill: question.skill,
+      explanation: question.explanation,
     };
   }
 
