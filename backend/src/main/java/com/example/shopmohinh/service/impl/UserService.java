@@ -66,7 +66,8 @@ public class UserService {
         }else{
             user.setCreatedBy("SYSTEM");
         }
-        user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
+//        user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
+        user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile(), request.getUsername()));
 
         // Lấy role từ request
         Set<Role> roles = getRolesFromRequest(request.getRoles());
@@ -195,6 +196,7 @@ public class UserService {
 
         if (request.getAvatarFile() != null && !request.getAvatarFile().isEmpty()) {
             user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
+//            user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile()));
         }
 
 //        var roles = roleRepository.findAllById(request.getRoles());

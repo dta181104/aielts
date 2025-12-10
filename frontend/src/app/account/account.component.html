@@ -6,7 +6,7 @@
 
   <div class="account-meta" *ngIf="username || profileCode || (roles && roles.length)">
     <div class="meta-row"><strong>Tên đăng nhập: </strong> <span>{{ username || '—' }}</span></div>
-     <div class="meta-row" *ngIf="profileCode"><strong>Mã tài khoản: </strong> <span>{{ profileCode }}</span></div>
+     <!-- <div class="meta-row" *ngIf="profileCode"><strong>Mã tài khoản: </strong> <span>{{ profileCode }}</span></div> -->
     <div class="meta-row" *ngIf="roles && roles.length"><strong>Vai trò:</strong> <span>{{ roles.join(', ') }}</span></div>
   </div>
   
