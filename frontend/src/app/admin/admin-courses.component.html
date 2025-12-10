@@ -164,7 +164,7 @@
               <p class="muted">Thứ tự: {{ section.orderIndex ?? '—' }} • {{ section.lessons?.length || 0 }} bài học</p>
             </div>
             <div class="section-actions">
-              <button type="button" (click)="selectSection(section)">Chọn</button>
+              <button type="button" (click)="selectSection(section)">Bài học</button>
               <button type="button" (click)="editSection(section)">Sửa</button>
               <button type="button" class="danger" (click)="deleteSection(section)" [disabled]="deletingSectionId === section.id">
                 {{ deletingSectionId === section.id ? 'Đang xoá...' : 'Xoá' }}
