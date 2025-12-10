@@ -622,7 +622,10 @@ export class AdminService {
 
   private writeCourseCache(list: Course[]) {
     this.courseCache = list;
-    localStorage.setItem(this.coursesKey, JSON.stringify(list));
+    // localStorage.setItem(this.coursesKey, JSON.stringify(list));
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(this.coursesKey, JSON.stringify(list));
+    }
   }
 
   private normalizeQuizPayload(payload: QuizRequestPayload): QuizRequestPayload {

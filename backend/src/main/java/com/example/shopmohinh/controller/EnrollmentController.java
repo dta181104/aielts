@@ -2,7 +2,7 @@ package com.example.shopmohinh.controller;
 
 import com.example.shopmohinh.dto.response.ApiResponse;
 import com.example.shopmohinh.dto.response.EnrolledCourseResponse;
-import com.example.shopmohinh.service.identity.IdentityEnrollmentService;
+import com.example.shopmohinh.service.impl.EnrollmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,9 +15,9 @@ import java.util.List;
 @RequestMapping("/users")
 public class EnrollmentController {
 
-    private final IdentityEnrollmentService enrollmentService;
+    private final EnrollmentService enrollmentService;
 
-    public EnrollmentController(IdentityEnrollmentService enrollmentService) {
+    public EnrollmentController(EnrollmentService enrollmentService) {
         this.enrollmentService = enrollmentService;
     }
 

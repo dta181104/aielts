@@ -1,4 +1,4 @@
-package com.example.shopmohinh.service.identity;
+package com.example.shopmohinh.service.impl;
 
 import com.example.shopmohinh.dto.response.EnrolledCourseResponse;
 import com.example.shopmohinh.repository.EnrollmentRepository;
@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class IdentityEnrollmentService {
+public class EnrollmentService {
 
     private final EnrollmentRepository enrollmentRepository;
 
-    public IdentityEnrollmentService(EnrollmentRepository enrollmentRepository) {
+    public EnrollmentService(EnrollmentRepository enrollmentRepository) {
         this.enrollmentRepository = enrollmentRepository;
     }
 
