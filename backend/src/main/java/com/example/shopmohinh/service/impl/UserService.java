@@ -66,7 +66,8 @@ public class UserService {
         }else{
             user.setCreatedBy("SYSTEM");
         }
-//        user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
+
+        // upload với tên file là username
         user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile(), request.getUsername()));
 
         // Lấy role từ request
@@ -195,8 +196,8 @@ public class UserService {
         }
 
         if (request.getAvatarFile() != null && !request.getAvatarFile().isEmpty()) {
-            user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
-//            user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile()));
+//            user.setAvatar(fileUploadUtil.uploadFile(request.getAvatarFile()));
+            user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile(), user.getUsername()));
         }
 
 //        var roles = roleRepository.findAllById(request.getRoles());

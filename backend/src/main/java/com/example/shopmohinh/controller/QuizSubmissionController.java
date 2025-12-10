@@ -1,10 +1,10 @@
-package com.example.shopmohinh.controller.identity;
+package com.example.shopmohinh.controller;
 
 import com.example.shopmohinh.dto.request.SubmissionAnswerRequest;
 import com.example.shopmohinh.dto.response.ApiResponse;
 import com.example.shopmohinh.dto.response.QuizSubmissionResponse;
 import com.example.shopmohinh.dto.response.SubmissionAnswerResponse;
-import com.example.shopmohinh.service.identity.QuizSubmissionService;
+import com.example.shopmohinh.service.impl.QuizSubmissionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

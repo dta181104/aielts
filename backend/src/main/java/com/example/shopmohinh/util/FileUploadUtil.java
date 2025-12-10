@@ -14,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -73,6 +75,37 @@ public class FileUploadUtil {
         }
 
         return uploadGenericFile(audioFile, "audio/", folderName, customFileName);
+    }
+
+    // Hàm up load nhều file audio
+    public List<String> uploadMultipleAudio(List<MultipartFile> audioFiles, String folderName, String baseFileName) {
+        List<String> audioUrls = new ArrayList<>();
+
+        // Kiểm tra danh sách rỗng
+        if (audioFiles == null || audioFiles.isEmpty()) {
+            return audioUrls; // Trả về list rỗng
+        }
+
+        // Duyệt từng file trong danh sách
+        for (int i = 0; i < audioFiles.size(); i++) {
+            MultipartFile file = audioFiles.get(i);
+
+            // Xử lý tên file cho từng file
+            String finalName = null;
+            if (baseFileName != null && !baseFileName.trim().isEmpty()) {
+                finalName = baseFileName + "_" + i;
+            }
+
+            try {
+                String url = uploadGenericFile(file, "audio/", folderName, finalName);
+                audioUrls.add(url);
+            } catch (AppException e) {
+                // Log lỗi và tiếp tục upload file tiếp theo
+                log.error("Failed to upload file index {}: {}", i, e.getMessage());
+            }
+        }
+
+        return audioUrls;
     }
 
     // --- PRIVATE HELPER ---
