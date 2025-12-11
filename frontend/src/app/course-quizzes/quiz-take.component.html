@@ -42,7 +42,7 @@
         [quizAutoScore]="quizAutoScore"
         [quizAutoTotal]="quizAutoTotal"
         (cancel)="onCancel()"
-        (submit)="submitSection(currentSectionIndex!)"
+        (submitted)="submitSection(currentSectionIndex!)"
         (audioCaptured)="onChildAudioCaptured($event)"
       ></app-quiz>
       <div *ngIf="quizSubmitted" class="result" style="margin-top:12px">

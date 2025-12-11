@@ -1,6 +1,6 @@
 <section class="quiz">
   <h3>{{ selectedQuiz?.title || 'Bài kiểm tra (4 phần)' }}</h3>
-  <form (ngSubmit)="onSubmit()">
+  <form (ngSubmit)="onSubmit($event)">
     <ng-container *ngFor="let section of quizSections">
       <div class="quiz-section">
         <h4>{{ section.title }}</h4>

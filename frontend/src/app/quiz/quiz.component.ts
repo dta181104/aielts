@@ -35,7 +35,7 @@ export class QuizComponent implements OnDestroy {
   @Input() submitLabel = 'Nộp bài';
 
   @Output() cancel = new EventEmitter<void>();
-  @Output() submit = new EventEmitter<void>();
+  @Output() submitted = new EventEmitter<void>();
   @Output() audioCaptured = new EventEmitter<{ questionId: string; file: File }>();
 
   private questionVisibility: Record<string, { prompt: boolean; answers: boolean }> = {};
@@ -103,7 +103,10 @@ export class QuizComponent implements OnDestroy {
   }
 
   onCancel() { this.cancel.emit(); }
-  onSubmit() { this.submit.emit(); }
+  onSubmit(event?: Event) {
+    try { event?.stopPropagation(); } catch (e) { /* ignore */ }
+    this.submitted.emit();
+  }
 
   startRecording(questionId: string) {
     Object.keys(this.isRecording).forEach(id => {
