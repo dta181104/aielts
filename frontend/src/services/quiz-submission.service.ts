@@ -85,6 +85,15 @@ export class QuizSubmissionService {
       .pipe(map((res) => (res?.result ?? (res as unknown as SubmissionAnswerResponse))));
   }
 
+  // Lấy tất cả submission của một user trong 1 quiz
+  getUserSubmissions(quizId: number, userId: number): Observable<QuizSubmissionResponse[]> {
+    return this.http
+      .get<ApiResponse<QuizSubmissionResponse[]>>(
+        `${this.baseUrl}/quizzes/${quizId}/users/${userId}/submissions`
+      )
+      .pipe(map((res) => (res?.result ?? (res as unknown as QuizSubmissionResponse[]))));
+  }
+
   submitSubmission(submissionId: number): Observable<QuizSubmissionResponse> {
     return this.http
       .put<ApiResponse<QuizSubmissionResponse>>(`${this.baseUrl}/quizzes/submissions/${submissionId}/submit`, {})

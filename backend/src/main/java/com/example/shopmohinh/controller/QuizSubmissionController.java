@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/quizzes")
 public class QuizSubmissionController {
@@ -59,5 +61,11 @@ public class QuizSubmissionController {
     public ResponseEntity<ApiResponse<QuizSubmissionResponse>> getSubmission(@PathVariable Long submissionId) {
         QuizSubmissionResponse resp = submissionService.getSubmission(submissionId);
         return ResponseEntity.ok(ApiResponse.<QuizSubmissionResponse>builder().code(1000).message("OK").result(resp).build());
+    }
+
+    @GetMapping("/{quizId}/users/{userId}/submissions")
+    public ResponseEntity<ApiResponse<List<QuizSubmissionResponse>>> getSubmissionsByQuizAndUser(@PathVariable Long quizId, @PathVariable Long userId) {
+        List<QuizSubmissionResponse> list = submissionService.getSubmissionsByQuizAndUser(quizId, userId);
+        return ResponseEntity.ok(ApiResponse.<List<QuizSubmissionResponse>>builder().code(1000).message("OK").result(list).build());
     }
 }

@@ -256,10 +256,10 @@ API CRUD đầy đủ cho hệ thống quản lý khóa học IELTS, bao gồm C
 - **Body:**
 ```json
 {
-  "type": "MULTIPLE_CHOICE", // MULTIPLE_CHOICE | TRUE_FALSE | SHORT_ANSWER
+  "type": "MULTIPLE_CHOICE",
   "text": "Choose the correct IPA symbol for /i:/",
-  "options": ["i", "ɪ", "iː"], // required nếu MULTIPLE_CHOICE
-  "correctOptionIndex": 2, // required nếu MULTIPLE_CHOICE
+  "options": ["i", "ɪ", "iː"],
+  "correctOptionIndex": 2,
   "score": 1
 }
 ```
@@ -391,26 +391,28 @@ Ghi chú:
 
 ## 9. Quiz Submissions (Làm bài kiểm tra)
 
-**Base URL:** `/identity`
+**Base URL:** `/identity` (project sử dụng context-path `/identity`)
 
 Mục đích: Các endpoint phục vụ việc học viên làm bài kiểm tra (tạo submission, lưu câu trả lời từng câu, nộp bài, lấy chi tiết và cho phép giáo viên chấm).
 
-Lưu ý: project hiện có bảng `quiz_submission` và `submission_answer`. Endpoint dưới đây giả định `server.servlet.context-path=/identity` (như cấu hình dự án) nên các đường dẫn đầy đủ bắt đầu với `/identity`.
+Lưu ý: server trả về wrapper `ApiResponse` chung của dự án:
+{
+  "code": 1000,
+  "message": "OK",
+  "result": { ... }
+}
 
-### Endpoints
+Các endpoint chi tiết (kèm request body + sample response):
 
 1) Start a submission (bắt đầu làm bài)
-- POST `/identity/quizzes/{quizId}/submissions?userId={userId}`
-- Description: Tạo record `quiz_submission` với trạng thái `DOING` và `start_time` = now.
-- Query params: `userId` (Long) — id user; trong production bạn có thể lấy user từ token JWT thay vì truyền param.
-- Response: ApiResponse<QuizSubmissionResponse>
+- Method: POST
+- URL: `/identity/quizzes/{quizId}/submissions?userId={userId}`
+- Mô tả: Tạo record `quiz_submission` với trạng thái `DOING` và `start_time` = now. Trong production, nên lấy user từ JWT thay vì truyền `userId`.
 
-Request example:
-```
-POST /identity/quizzes/1/submissions?userId=1
-```
-Response (200):
-```json
+Request params (query):
+- userId (Long) — bắt buộc khi testing.
+
+Response 200 (ApiResponse<QuizSubmissionResponse>):
 {
   "code": 1000,
   "message": "OK",
@@ -423,25 +425,21 @@ Response (200):
     "score": 0.0
   }
 }
-```
 
 2) Add or update an answer (thêm / cập nhật đáp án cho 1 câu)
-- POST `/identity/quizzes/submissions/{submissionId}/answers`
-- Request body (JSON):
-```json
+- Method: POST
+- URL: `/identity/quizzes/submissions/{submissionId}/answers`
+- Description: Lưu hoặc cập nhật `submission_answer` cho câu hỏi cụ thể. Hỗ trợ MCQ (selectedOption), writing (textAnswer) và speaking (audioUrl hoặc audioFile via multipart endpoint).
+
+Request body (JSON):
 {
   "questionId": 5,
-  "selectedOption": "A",   // cho MCQ
+  "selectedOption": "A",    // cho MCQ
   "textAnswer": "My essay answer", // cho writing
-  "audioUrl": "https://..." // cho speaking
+  "audioUrl": "https://..." // nếu đã upload audio ở client
 }
-```
-- Validation: `questionId` required. `selectedOption` là kí tự như "A"/"B" nếu là MCQ.
-- Behavior: nếu question đã có answer trong submission thì cập nhật; nếu là MCQ và question.correctOption != null thì server tự đánh `isCorrect`.
-- Response: ApiResponse<SubmissionAnswerResponse>
 
-Response example:
-```json
+Response 200 (ApiResponse<SubmissionAnswerResponse>):
 {
   "code": 1000,
   "message": "OK",
@@ -456,16 +454,52 @@ Response example:
     "teacherNote": null
   }
 }
+
+3) Submit audio answer (nộp phần speaking — multipart)
+- Method: POST
+- URL: `/identity/quizzes/submissions/{submissionId}/audio-answer`
+- Consumes: multipart/form-data
+- Params: query or form fields as specified below
+
+Form fields (multipart):
+- audioFile (file) — file audio (MP3/WAV/etc)
+- questionId (long) — id câu hỏi trong quiz
+
+Example curl (multipart):
+```bash
+curl -X POST "http://localhost:8080/identity/quizzes/submissions/10/audio-answer?questionId=5" \
+  -H "Authorization: Bearer <token>" \
+  -F "audioFile=@/path/to/answer.mp3"
 ```
 
-3) Submit (nộp bài, hoàn tất và auto-grade cho MCQ)
-- PUT `/identity/quizzes/submissions/{submissionId}/submit`
-- Description: Đặt `submit_time`, status=`SUBMITTED`, và tính điểm tự động cho các câu MCQ (các câu không có `correctOption` như writing/speaking không được auto-grade).
-- Scoring: score = (số MCQ đúng / tổng MCQ có trong bài) * 100 (phần trăm). Lưu `score` trên `quiz_submission`.
-- Response: ApiResponse<QuizSubmissionResponse> kèm danh sách answers.
+Server behavior:
+- Server nhận `audioFile`, upload lên Cloudinary (hoặc storage cấu hình), lưu `audioUrl` vào `submission_answer` tương ứng. Nếu chưa có `submission_answer` cho question đó, sẽ tạo mới.
 
-Response example:
-```json
+Response 200 (ApiResponse<SubmissionAnswerResponse>):
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 33,
+    "questionId": 5,
+    "selectedOption": null,
+    "isCorrect": null,
+    "textAnswer": null,
+    "audioUrl": "https://res.cloudinary.com/.../AIELTS/submission/question_5/question_5.mp3_submission_10",
+    "gradeScore": null,
+    "teacherNote": null
+  }
+}
+
+4) Submit (nộp bài, hoàn tất và auto-grade cho MCQ)
+- Method: PUT
+- URL: `/identity/quizzes/submissions/{submissionId}/submit`
+
+Behavior:
+- Đặt `submit_time`, `status = SUBMITTED`.
+- Auto-grade các câu MCQ (các question có `correctOption` không null). Công thức: score = (số MCQ đúng / tổng MCQ có trong bài) * 100.
+
+Response 200 (ApiResponse<QuizSubmissionResponse>):
 {
   "code": 1000,
   "message": "OK",
@@ -477,48 +511,113 @@ Response example:
     "submitTime": "2025-11-27T08:15:00",
     "status": "SUBMITTED",
     "score": 75.0,
+    "answers": [
+      {
+        "id": 21,
+        "questionId": 1,
+        "selectedOption": "A",
+        "isCorrect": true,
+        "textAnswer": null,
+        "audioUrl": null,
+        "gradeScore": null
+      },
+      {
+        "id": 22,
+        "questionId": 5,
+        "selectedOption": null,
+        "isCorrect": null,
+        "textAnswer": "My essay...",
+        "audioUrl": null,
+        "gradeScore": null
+      }
+    ]
+  }
+}
+
+5) Get submission details
+- Method: GET
+- URL: `/identity/quizzes/submissions/{submissionId}`
+
+Response 200 (ApiResponse<QuizSubmissionResponse>):
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 10,
+    "userId": 1,
+    "quizId": 1,
+    "startTime": "2025-11-27T08:00:00",
+    "submitTime": "2025-11-27T08:15:00",
+    "status": "SUBMITTED",
+    "score": 75.0,
+    "teacherFeedback": null,
     "answers": [ /* array of SubmissionAnswerResponse */ ]
   }
 }
-```
 
-4) Get submission details
-- GET `/identity/quizzes/submissions/{submissionId}`
-- Description: Lấy chi tiết `quiz_submission` kèm danh sách `submission_answer`.
-- Response: ApiResponse<QuizSubmissionResponse>
+6) (Optional) List submissions by quiz (admin)
+- Method: GET
+- URL: `/identity/quizzes/{quizId}/submissions`
 
-5) (Optional) List submissions by quiz (admin)
-- GET `/identity/quizzes/{quizId}/submissions`
-- Response: ApiResponse<List<QuizSubmissionResponse>>
+Response 200 (ApiResponse<List<QuizSubmissionResponse>>)
 
-6) (Optional) List submissions by user
-- GET `/identity/users/{userId}/submissions`
-- Response: ApiResponse<List<QuizSubmissionResponse>>
+7) (Optional) List submissions by user
+- Method: GET
+- URL: `/identity/users/{userId}/submissions`
 
-7) (Teacher) Grade an answer / finalize grading
-- PUT `/identity/submissions/{submissionId}/answers/{answerId}/grade`
-- Body:
-```json
-{ "gradeScore": 8.5, "teacherNote": "Good structure" }
-```
-- Behavior: cập nhật `gradeScore` trên `submission_answer`; sau khi giáo viên chấm xong có thể cập nhật `quiz_submission.teacher_feedback` và `quiz_submission.status = GRADED`.
+Response 200 (ApiResponse<List<QuizSubmissionResponse>>)
 
-8) (Teacher) Finalize grading for a submission
-- PUT `/identity/submissions/{submissionId}/grade`
-- Body:
-```json
-{ "teacherFeedback": "Overall good", "status": "GRADED" }
-```
-- Behavior: cập nhật `teacher_feedback` và `status` trên `quiz_submission`.
+8) (Teacher) Grade an answer / finalize grading for an answer
+- Method: PUT
+- URL: `/identity/submissions/{submissionId}/answers/{answerId}/grade`
+- Body (JSON):
+{
+  "gradeScore": 8.5,
+  "teacherNote": "Good structure"
+}
+
+Response 200 (ApiResponse<SubmissionAnswerResponse>):
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 22,
+    "questionId": 5,
+    "gradeScore": 8.5,
+    "teacherNote": "Good structure"
+  }
+}
+
+9) (Teacher) Finalize grading for a submission
+- Method: PUT
+- URL: `/identity/submissions/{submissionId}/grade`
+- Body (JSON):
+{
+  "teacherFeedback": "Overall good",
+  "status": "GRADED"
+}
+
+Response 200 (ApiResponse<QuizSubmissionResponse>):
+{
+  "code": 1000,
+  "message": "OK",
+  "result": {
+    "id": 10,
+    "status": "GRADED",
+    "teacherFeedback": "Overall good"
+  }
+}
 
 ---
 
-### DTO / Response shapes (tóm tắt)
+### DTO / Response shapes (chi tiết)
+
 - SubmissionAnswerRequest
   - questionId: Long (required)
   - selectedOption: String (ví dụ "A")
   - textAnswer: String
   - audioUrl: String
+  - audioFile: MultipartFile (cho endpoint multipart)
 
 - SubmissionAnswerResponse
   - id: Long
@@ -541,43 +640,75 @@ Response example:
   - teacherFeedback: String
   - answers: List<SubmissionAnswerResponse>
 
-### Validation rules
-- `questionId` is required when adding an answer.
-- `selectedOption` should be one of the option keys (e.g., "A","B","C","D") for MCQ.
-- When submitting, if no MCQ answers exist the auto-score will be 0.0.
+---
+
+### Validation rules (tóm tắt)
+- `questionId` required khi thêm/cập nhật câu trả lời.
+- `selectedOption` phải là 1 trong các key option nếu question là MCQ.
+- Khi submit, nếu không có câu MCQ nào thì điểm auto = 0.0.
 
 ### Security notes
-- Current implementation used `userId` query param for `startSubmission` for quick testing. In production, prefer to derive `userId` from the authenticated principal (JWT) to prevent spoofing.
-- Endpoints under `/identity` are subject to the project's `SecurityConfig`; if you want unauthenticated access to any endpoint, update `SecurityConfig` rules accordingly.
+- Tránh truyền `userId` từ client; nên lấy từ token JWT.
+- Endpoint upload audio là multipart; đảm bảo cấu hình `MultipartResolver` và giới hạn kích thước file hợp lý.
 
 ---
 
-### Example flow (complete)
-1) Start submission:
+## 10. Lịch sử làm bài (Quiz Submissions)
+
+**Base URL:** `/identity/quizzes`
+
+Mục đích: Các endpoint phục vụ việc lấy danh sách và chi tiết các lần làm bài kiểm tra của học viên.
+
+6.a) Get all submissions of a user for a specific quiz (multiple attempts)
+- Method: GET
+- URL: `/identity/quizzes/{quizId}/users/{userId}/submissions`
+- Description: Trả về danh sách tất cả `QuizSubmission` mà `userId` đã thực hiện cho `quizId`. Dùng khi hệ thống cho phép học viên làm quiz nhiều lần.
+
+Path parameters:
+- quizId (Long) — id của quiz
+- userId (Long) — id của user
+
+Behavior:
+- Trả về HTTP 200 với `ApiResponse<List<QuizSubmissionResponse>>`.
+- Nếu không có submission nào: trả về 200 với `result: []` (mảng rỗng).
+- Considerations: Có thể cần paging nếu số lượng submissions lớn; hiện API trả tất cả.
+
+Example request (curl):
+```bash
+curl -v -X GET "http://localhost:8080/identity/quizzes/2/users/1/submissions" \
+  -H "Authorization: Bearer <token>"
 ```
-POST /identity/quizzes/1/submissions?userId=1
-```
-2) Answer question 1 (MCQ):
-```
-POST /identity/quizzes/submissions/10/answers
-{ "questionId": 1, "selectedOption": "A" }
-```
-3) Answer question 2 (writing):
-```
-POST /identity/quizzes/submissions/10/answers
-{ "questionId": 5, "textAnswer": "My essay..." }
-```
-4) Submit:
-```
-PUT /identity/quizzes/submissions/10/submit
-```
-5) Teacher grade writing question (optional):
-```
-PUT /identity/submissions/10/answers/22/grade
-{ "gradeScore": 8.5, "teacherNote": "Nice ideas" }
-```
-6) Finalize grading:
-```
-PUT /identity/submissions/10/grade
-{ "teacherFeedback": "Good job", "status": "GRADED" }
-```
+
+Example successful response (200):
+{
+  "code": 1000,
+  "message": "OK",
+  "result": [
+    {
+      "id": 34,
+      "userId": 1,
+      "quizId": 2,
+      "startTime": "2025-12-11T08:00:00",
+      "submitTime": "2025-12-11T08:15:00",
+      "status": "SUBMITTED",
+      "score": 80.0,
+      "teacherFeedback": null,
+      "answers": [ /* ... */ ]
+    },
+    {
+      "id": 40,
+      "userId": 1,
+      "quizId": 2,
+      "startTime": "2025-12-05T09:00:00",
+      "submitTime": "2025-12-05T09:12:00",
+      "status": "SUBMITTED",
+      "score": 72.5,
+      "teacherFeedback": null,
+      "answers": [ /* ... */ ]
+    }
+  ]
+}
+
+Notes / Next steps:
+- Nếu bạn muốn 404 thay vì mảng rỗng khi không có submission, tôi có thể thay đổi behavior.
+- Nếu cần, tôi sẽ thêm paging (page, size) và bảo mật (chỉ owner hoặc admin/teacher xem được).

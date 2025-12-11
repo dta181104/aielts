@@ -57,11 +57,9 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   quizSubmitted = false;
   quizAutoScore: number | null = null;
   private latestAutoTotal: number | null = null;
-  private quizStorageKey = 'course_quiz_results';
   submissionId: number | null = null;
   userId?: number;
   savingSection = false;
-  private submissionStorageKey = 'quiz_submission_sessions';
   private submissionEnsured = false;
 
   // Exam orchestration: order, metadata, timers and states
@@ -109,13 +107,6 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     const quizNumeric = qId ? parseInt(qId, 10) : null;
     this.quizId = Number.isFinite(quizNumeric) ? quizNumeric : null;
     this.userId = this.resolveUserId();
-    if (this.quizId && this.userId) {
-      const storedSubmissionId = this.readStoredSubmissionId();
-      if (storedSubmissionId) {
-        this.submissionId = storedSubmissionId;
-        this.submissionEnsured = true;
-      }
-    }
     if (!id || !this.quizId) {
       this.router.navigate(['/my-courses']);
       return;
@@ -128,16 +119,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.clearActiveTimer();
   }
 
-  getSavedQuizResult(quizId?: string | number) {
-    try {
-      const raw = localStorage.getItem(this.quizStorageKey) || '{}';
-      const map = JSON.parse(raw);
-      const cid = String(this.courseId);
-      if (!map[cid]) return null;
-      if (!quizId) return null;
-      return map[cid][String(quizId)] || null;
-    } catch(e) { return null; }
-  }
+  
 
   onCancel() {
     if (this.courseId) {
@@ -155,8 +137,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.pauseActiveTimer();
     const sect = this.sectionDefinitions[id];
     this.quizSections = sect ? [sect] : [];
-    const saved = this.getSavedQuizResult(this.selectedQuiz?.id)?.sections || {};
-    const sr = saved?.[id] || null;
+    const sr = this.sectionResults[id] || null;
     this.answers = this.normalizeAnswers(sr?.answers || {});
     this.textAnswers = sr?.textAnswers || {};
     this.quizSubmitted = !!sr;
@@ -248,37 +229,11 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     }
   }
 
-  saveQuizResult(quizId: string | number | undefined, payload?: { autoScore?: number; autoTotal?: number }) {
-    if (!quizId) return;
-    try {
-      const raw = localStorage.getItem(this.quizStorageKey) || '{}';
-      const map = JSON.parse(raw);
-      const cid = String(this.courseId);
-      if (!map[cid]) map[cid] = {};
-      const key = String(quizId);
-      map[cid][key] = {
-        autoScore: payload?.autoScore ?? this.quizAutoScore,
-        autoTotal: payload?.autoTotal ?? this.computeSectionTotal(this.quizSections),
-        answers: { ...this.answers },
-        textAnswers: { ...this.textAnswers },
-        sections: this.sectionResults,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem(this.quizStorageKey, JSON.stringify(map));
-    } catch (e) { console.warn('Failed to save quiz result', e); }
-  }
+  
 
   private ensureSubmissionSession() {
     if (!this.quizId || !this.userId) {
       return;
-    }
-    if (!this.submissionId) {
-      const stored = this.readStoredSubmissionId();
-      if (stored) {
-        this.submissionId = stored;
-        this.submissionEnsured = true;
-        return;
-      }
     }
     if (this.submissionId || this.submissionEnsured) {
       return;
@@ -290,9 +245,6 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (submission) => {
           this.submissionId = submission?.id ?? null;
-          if (this.submissionId) {
-            this.storeSubmissionId(this.submissionId);
-          }
         },
         error: (error) => {
           console.warn('Unable to start quiz submission session', error);
@@ -459,7 +411,6 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = true;
     this.quizAutoScore = autoScore;
     this.latestAutoTotal = autoTotal;
-    this.saveQuizResult(this.selectedQuiz?.id, { autoScore, autoTotal });
   }
 
   private resolveUserId(): number | undefined {
@@ -490,45 +441,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     return undefined;
   }
 
-  private readStoredSubmissionId(): number | null {
-    if (typeof window === 'undefined' || !this.quizId || !this.userId) {
-      return null;
-    }
-    try {
-      const raw = localStorage.getItem(this.submissionStorageKey);
-      if (!raw) {
-        return null;
-      }
-      const map = JSON.parse(raw);
-      const quizEntry = map?.[String(this.quizId)];
-      if (!quizEntry) {
-        return null;
-      }
-      const stored = quizEntry[String(this.userId)];
-      const parsed = Number(stored);
-      return Number.isFinite(parsed) ? parsed : null;
-    } catch (e) {
-      console.warn('Failed to restore submission id', e);
-      return null;
-    }
-  }
-
-  private storeSubmissionId(submissionId: number) {
-    if (typeof window === 'undefined' || !this.quizId || !this.userId) {
-      return;
-    }
-    try {
-      const raw = localStorage.getItem(this.submissionStorageKey) || '{}';
-      const map = JSON.parse(raw);
-      if (!map[String(this.quizId)]) {
-        map[String(this.quizId)] = {};
-      }
-      map[String(this.quizId)][String(this.userId)] = submissionId;
-      localStorage.setItem(this.submissionStorageKey, JSON.stringify(map));
-    } catch (e) {
-      console.warn('Failed to persist submission id', e);
-    }
-  }
+  
 
   private loadQuizDetail(quizId: number) {
     if (!quizId) {
@@ -544,7 +457,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
         next: (quiz) => {
           this.selectedQuiz = quiz;
           this.prepareQuiz(quiz);
-          this.restoreProgress();
+          this.fetchUserSubmissionsAndRestore();
           this.ensureSubmissionSession();
         },
         error: (error) => {
@@ -594,9 +507,8 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private restoreProgress() {
-    const saved = this.getSavedQuizResult(this.selectedQuiz?.id);
-    if (!saved) {
+  private fetchUserSubmissionsAndRestore() {
+    if (!this.quizId || !this.userId) {
       this.quizSubmitted = false;
       this.quizAutoScore = null;
       this.answers = {};
@@ -604,34 +516,77 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
       this.latestAutoTotal = null;
       return;
     }
-    this.quizSubmitted = !!saved.autoScore;
-    this.quizAutoScore = saved.autoScore ?? null;
-    this.answers = this.normalizeAnswers(saved.answers || {});
-    this.textAnswers = saved.textAnswers || {};
-    this.sectionResults = this.normalizeStoredSections(saved.sections || {});
-    this.latestAutoTotal = typeof saved.autoTotal === 'number' ? saved.autoTotal : Number(saved.autoTotal) || 0;
-    Object.keys(this.sectionResults).forEach((sid) => {
-      if (this.sectionRemaining[sid] === undefined) {
-        this.ensureSectionMeta(sid);
-        this.sectionRemaining[sid] = (this.sectionMeta[sid]?.minutes ?? 0) * 60;
-      }
-      this.sectionStarted[sid] = true;
-      this.sectionCompleted[sid] = true;
-    });
-  }
+    this.quizSubmission
+      .getUserSubmissions(this.quizId, this.userId)
+      .pipe(take(1))
+      .subscribe({
+        next: (subs) => {
+          if (!subs || !subs.length) {
+            this.quizSubmitted = false;
+            this.answers = {};
+            this.textAnswers = {};
+            return;
+          }
+          // Prefer an in-progress submission, otherwise the most recent
+          let preferred = subs.find((s) => s.status === 'DOING') || subs.slice().sort((a, b) => {
+            const ta = (a.submitTime || a.startTime || '').toString();
+            const tb = (b.submitTime || b.startTime || '').toString();
+            return tb.localeCompare(ta);
+          })[0];
+          if (!preferred) return;
+          this.submissionId = preferred.id ?? null;
 
-  private normalizeStoredSections(sections: Record<string, any>): Record<string, SectionResult> {
-    return Object.keys(sections || {}).reduce((acc, key) => {
-      const entry = sections[key] || {};
-      acc[key] = {
-        autoScore: Number(entry.autoScore) || 0,
-        autoTotal: Number(entry.autoTotal) || 0,
-        answers: this.normalizeAnswers(entry.answers || {}),
-        textAnswers: entry.textAnswers || {},
-        timestamp: entry.timestamp || new Date().toISOString(),
-      };
-      return acc;
-    }, {} as Record<string, SectionResult>);
+          // build question -> section map
+          const qToSection: Record<string, string> = {};
+          Object.keys(this.sectionDefinitions || {}).forEach((sid) => {
+            (this.sectionDefinitions[sid].questions || []).forEach((q) => {
+              qToSection[String(q.id)] = sid;
+            });
+          });
+
+          // reset
+          this.answers = {};
+          this.textAnswers = {};
+          this.sectionResults = {};
+
+          (preferred.answers || []).forEach((ans) => {
+            const qid = String(ans.questionId);
+            if (ans.selectedOption) this.answers[qid] = String(ans.selectedOption);
+            if (ans.textAnswer) this.textAnswers[qid] = String(ans.textAnswer);
+            const sid = qToSection[qid] || 'general';
+            if (!this.sectionResults[sid]) {
+              this.sectionResults[sid] = { autoScore: 0, autoTotal: 0, answers: {}, textAnswers: {}, timestamp: preferred.submitTime || preferred.startTime || new Date().toISOString() };
+            }
+            if (ans.selectedOption) this.sectionResults[sid].answers[qid] = String(ans.selectedOption);
+            if (ans.textAnswer) this.sectionResults[sid].textAnswers[qid] = String(ans.textAnswer);
+          });
+
+          // compute auto scores per section
+          Object.keys(this.sectionResults).forEach((sid) => {
+            const sect = this.sectionDefinitions[sid];
+            let autoTotal = 0;
+            let autoScore = 0;
+            (sect.questions || []).forEach((q) => {
+              if (q.type === 'mcq') {
+                autoTotal++;
+                const sel = this.sectionResults[sid].answers[String(q.id)];
+                if (sel && sel === q.correctOptionId) autoScore++;
+              }
+            });
+            this.sectionResults[sid].autoTotal = autoTotal;
+            this.sectionResults[sid].autoScore = autoScore;
+            this.sectionStarted[sid] = true;
+            this.sectionCompleted[sid] = true;
+          });
+
+          this.quizSubmitted = !!preferred.submitTime;
+          this.quizAutoScore = Object.values(this.sectionResults).reduce((s, r) => s + (r.autoScore || 0), 0);
+          this.latestAutoTotal = Object.values(this.sectionResults).reduce((s, r) => s + (r.autoTotal || 0), 0);
+        },
+        error: (e) => {
+          console.warn('Failed to fetch user submissions', e);
+        },
+      });
   }
 
   private buildSectionMap(quiz: Quiz): Record<string, QuizSectionView> {

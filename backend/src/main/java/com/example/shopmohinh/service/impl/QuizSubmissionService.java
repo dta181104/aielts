@@ -88,8 +88,6 @@ public class QuizSubmissionService {
             String folderName = "AIELTS/submission/question_" + question.getId();
             String customFileName = "question_" + question.getId() + "_submission_" + submissionId;
             String audioUrl = fileUploadUtil.uploadAudio(req.getAudioFile(), folderName, customFileName);
-            System.out.println("customFilename: " + customFileName);
-            System.out.println("DEBUG CHECK - Audio URL: " + audioUrl);
             entity.setAudioUrl(audioUrl);
         }
 
@@ -138,6 +136,26 @@ public class QuizSubmissionService {
         QuizSubmissionResponse resp = toResponse(submission);
         resp.setAnswers(answers.stream().map(this::toAnswerResponse).collect(Collectors.toList()));
         return resp;
+    }
+
+    public List<QuizSubmissionResponse> getSubmissionsByUser(Long userId) {
+        List<QuizSubmissionEntity> submissions = submissionRepository.findByUserId(userId);
+        return submissions.stream().map(s -> {
+            QuizSubmissionResponse resp = toResponse(s);
+            List<SubmissionAnswerEntity> answers = answerRepository.findBySubmissionId(s.getId());
+            resp.setAnswers(answers.stream().map(this::toAnswerResponse).collect(Collectors.toList()));
+            return resp;
+        }).collect(Collectors.toList());
+    }
+
+    public List<QuizSubmissionResponse> getSubmissionsByQuizAndUser(Long quizId, Long userId) {
+        List<QuizSubmissionEntity> submissions = submissionRepository.findAllByQuizIdAndUserId(quizId, userId);
+        return submissions.stream().map(s -> {
+            QuizSubmissionResponse resp = toResponse(s);
+            List<SubmissionAnswerEntity> answers = answerRepository.findBySubmissionId(s.getId());
+            resp.setAnswers(answers.stream().map(this::toAnswerResponse).collect(Collectors.toList()));
+            return resp;
+        }).collect(Collectors.toList());
     }
 
     private QuizSubmissionResponse toResponse(QuizSubmissionEntity s) {

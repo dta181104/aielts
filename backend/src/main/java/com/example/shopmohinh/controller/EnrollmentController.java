@@ -32,4 +32,3 @@ public class EnrollmentController {
         return ResponseEntity.ok(response);
     }
 }
-
