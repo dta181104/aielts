@@ -14,6 +14,7 @@ export interface SubmissionAnswerPayload {
   questionId: number;
   selectedOption?: string | null;
   textAnswer?: string | null;
+  audioFile?: File | null;
   audioUrl?: string | null;
 }
 
@@ -66,6 +67,22 @@ export class QuizSubmissionService {
       return of([]);
     }
     return forkJoin(payloads.map((payload) => this.saveAnswer(submissionId, payload)));
+  }
+
+  // New: upload audio file as multipart/form-data for an answer
+  uploadAnswerAudio(submissionId: number, questionId: number, file: File): Observable<SubmissionAnswerResponse> {
+    const form = new FormData();
+    // backend expects the uploaded audio under field name `audioFile`
+    form.append('audioFile', file, file.name);
+    // backend expects questionId as a request param (query param)
+    const params = new HttpParams().set('questionId', String(questionId));
+    return this.http
+      .post<ApiResponse<SubmissionAnswerResponse>>(
+        `${this.baseUrl}/quizzes/submissions/${submissionId}/audio-answer`,
+        form,
+        { params }
+      )
+      .pipe(map((res) => (res?.result ?? (res as unknown as SubmissionAnswerResponse))));
   }
 
   submitSubmission(submissionId: number): Observable<QuizSubmissionResponse> {

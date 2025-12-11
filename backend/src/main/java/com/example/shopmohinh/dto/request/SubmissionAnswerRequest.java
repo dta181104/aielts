@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @NoArgsConstructor
@@ -17,5 +18,6 @@ public class SubmissionAnswerRequest {
     String selectedOption; // A/B/C etc
     String textAnswer; // for writing
     String audioUrl; // for speaking
+    MultipartFile audioFile; // for speaking
 }
 

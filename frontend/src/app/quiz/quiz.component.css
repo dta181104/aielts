@@ -91,3 +91,20 @@
 .review-option .opt-text { color:#111827; }
 .badge { background:#16a34a; color:#fff; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
 .badge--secondary { background:#3b82f6; }
+
+/* Custom styles for the audio recorder */
+.audio-recorder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.audio-playback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+

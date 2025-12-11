@@ -39,7 +39,29 @@
             </label>
           </div>
           <div *ngIf="q.type === 'text' && shouldShowAnswers(q)" class="options">
-            <textarea [(ngModel)]="textAnswers[q.id]" name="t{{q.id}}" rows="5" placeholder="Viết câu trả lời của bạn ở đây..."></textarea>
+            <ng-container *ngIf="isSpeakingQuestion(q); else writingQuestion">
+  <div class="audio-recorder">
+    <button type="button" class="btn" (click)="startRecording(q.id)" [disabled]="isRecording[q.id]">
+      {{ isRecording[q.id] ? 'Đang ghi...' : 'Bắt đầu ghi âm' }}
+    </button>
+    <button type="button" class="btn" (click)="stopRecording(q.id)" [disabled]="!isRecording[q.id]">
+      Dừng ghi âm
+    </button>
+    <div class="record-timer" *ngIf="isRecording[q.id]">
+      Thời gian ghi âm: {{ recordingTimeDisplay[q.id] || '00:00' }}
+    </div>
+    <div class="record-timer" *ngIf="!isRecording[q.id] && recordingTimeDisplay[q.id]">
+      Thời gian: {{ recordingTimeDisplay[q.id] }}
+    </div>
+    <div *ngIf="recordedAudio[q.id]" class="audio-playback">
+      <!-- <label>Nghe lại:</label> -->
+      <audio [src]="getAudioUrl(q.id)" controls></audio>
+    </div>
+  </div>
+</ng-container>
+            <ng-template #writingQuestion>
+              <textarea [(ngModel)]="textAnswers[q.id]" name="t{{q.id}}" rows="5" placeholder="Viết câu trả lời của bạn ở đây..."></textarea>
+            </ng-template>
           </div>
         </div>
       </div>

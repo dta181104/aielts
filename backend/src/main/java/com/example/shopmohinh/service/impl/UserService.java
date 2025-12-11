@@ -66,7 +66,7 @@ public class UserService {
         }else{
             user.setCreatedBy("SYSTEM");
         }
-
+        System.out.println("avtfile: " + request.getAvatarFile());
         // upload với tên file là username
         user.setAvatar(fileUploadUtil.uploadAvatar(request.getAvatarFile(), request.getUsername()));
 

@@ -43,6 +43,7 @@
         [quizAutoTotal]="quizAutoTotal"
         (cancel)="onCancel()"
         (submit)="submitSection(currentSectionIndex!)"
+        (audioCaptured)="onChildAudioCaptured($event)"
       ></app-quiz>
       <div *ngIf="quizSubmitted" class="result" style="margin-top:12px">
         <strong>Kết quả tự chấm phần này:</strong> {{ quizAutoScore }} / {{ quizAutoTotal }}

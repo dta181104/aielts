@@ -13,6 +13,7 @@ import com.example.shopmohinh.repository.QuizRepository;
 import com.example.shopmohinh.repository.QuizSubmissionRepository;
 import com.example.shopmohinh.repository.SubmissionAnswerRepository;
 import com.example.shopmohinh.repository.UserRepository;
+import com.example.shopmohinh.util.FileUploadUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,18 +27,21 @@ import java.math.RoundingMode;
 @Service
 public class QuizSubmissionService {
 
+    FileUploadUtil fileUploadUtil;
+
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
     private final QuizSubmissionRepository submissionRepository;
     private final SubmissionAnswerRepository answerRepository;
     private final UserRepository userRepository;
 
-    public QuizSubmissionService(QuizRepository quizRepository, QuestionRepository questionRepository, QuizSubmissionRepository submissionRepository, SubmissionAnswerRepository answerRepository, UserRepository userRepository) {
+    public QuizSubmissionService(QuizRepository quizRepository, QuestionRepository questionRepository, QuizSubmissionRepository submissionRepository, SubmissionAnswerRepository answerRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil) {
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
         this.submissionRepository = submissionRepository;
         this.answerRepository = answerRepository;
         this.userRepository = userRepository;
+        this.fileUploadUtil = fileUploadUtil;
     }
 
     @Transactional
@@ -70,9 +74,24 @@ public class QuizSubmissionService {
                 .question(question)
                 .build());
 
+        System.out.println("DEBUG CHECK - Option: " + req.getSelectedOption());
+        System.out.println("DEBUG CHECK - Text: " + req.getTextAnswer());
+        System.out.println("DEBUG CHECK - Audio: " + req.getAudioFile());
+
         entity.setSelectedOption(req.getSelectedOption());
         entity.setTextAnswer(req.getTextAnswer());
-        entity.setAudioUrl(req.getAudioUrl());
+//        entity.setAudioUrl(req.getAudioUrl());
+        if (req.getAudioFile() != null) {
+            if (fileUploadUtil == null) {
+                throw new RuntimeException("FileUploadUtil is not configured");
+            }
+            String folderName = "AIELTS/submission/question_" + question.getId();
+            String customFileName = "question_" + question.getId() + "_submission_" + submissionId;
+            String audioUrl = fileUploadUtil.uploadAudio(req.getAudioFile(), folderName, customFileName);
+            System.out.println("customFilename: " + customFileName);
+            System.out.println("DEBUG CHECK - Audio URL: " + audioUrl);
+            entity.setAudioUrl(audioUrl);
+        }
 
         // Auto-evaluate for MCQ
         if (entity.getSelectedOption() != null && question.getCorrectOption() != null) {

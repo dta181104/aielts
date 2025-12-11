@@ -6,7 +6,7 @@ import { QuizComponent } from '../quiz/quiz.component';
 import { ButtonComponent } from '../shared/button/button.component';
 import { AdminService, Quiz, Question as AdminQuestion } from '../../services/admin.service';
 import { QuizSubmissionService, SubmissionAnswerPayload } from '../../services/quiz-submission.service';
-import { of } from 'rxjs';
+import { of, forkJoin } from 'rxjs';
 import { finalize, take } from 'rxjs/operators';
 
 interface QuizOptionView {
@@ -305,34 +305,133 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     if (!this.submissionId || !this.quizId || !this.userId) {
       return of([]);
     }
-    const payloads = this.buildSubmissionPayloads(section);
-    if (!payloads.length) {
-      return of([]);
-    }
-    return this.quizSubmission.saveAnswersBulk(this.submissionId, payloads);
-  }
-
-  private buildSubmissionPayloads(section: QuizSectionView): SubmissionAnswerPayload[] {
-    const payloads: SubmissionAnswerPayload[] = [];
+    const calls: import('rxjs').Observable<any>[] = [];
     section.questions.forEach((question) => {
       const numericId = Number(question.id);
       if (!Number.isFinite(numericId)) {
         return;
       }
       const key = String(question.id);
+
+      // If we have an audio file recorded for this question, upload multipart
+      const audioFile = this.audioFiles[key];
+      if (audioFile) {
+        calls.push(this.quizSubmission.uploadAnswerAudio(this.submissionId!, numericId, audioFile));
+        return;
+      }
+
+      // MCQ or text: send JSON payload as before
       if (question.type === 'mcq') {
         const selected = this.answers[key];
         if (selected) {
-          payloads.push({ questionId: numericId, selectedOption: selected });
+          calls.push(this.quizSubmission.saveAnswer(this.submissionId!, { questionId: numericId, selectedOption: selected }));
         }
       } else if (question.type === 'text') {
         const response = this.textAnswers[key];
         if (response && response.trim()) {
-          payloads.push({ questionId: numericId, textAnswer: response.trim() });
+          calls.push(this.quizSubmission.saveAnswer(this.submissionId!, { questionId: numericId, textAnswer: response.trim() }));
         }
       }
     });
-    return payloads;
+
+    if (!calls.length) {
+      return of([]);
+    }
+    // Run all saves/uploads in parallel
+    return forkJoin(calls);
+  }
+
+  // Recording state and storage for audio files per question (speaking)
+  private mediaStream: MediaStream | null = null;
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: { [id: string]: Blob[] } = {};
+  audioBlobs: { [id: string]: Blob } = {};
+  audioFiles: { [id: string]: File } = {};
+  audioUrls: { [id: string]: string } = {};
+  recordingQuestionId: string | null = null;
+  recording = false;
+
+  // Start recording for a specific question (requests microphone)
+  async startRecording(questionId: string) {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn('getUserMedia not supported');
+        return;
+      }
+      this.recordingQuestionId = questionId;
+      this.recording = true;
+      this.audioChunks[questionId] = [];
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorder = new MediaRecorder(this.mediaStream);
+      this.mediaRecorder.ondataavailable = (ev: BlobEvent) => {
+        if (ev.data && ev.data.size > 0) {
+          this.audioChunks[questionId].push(ev.data);
+        }
+      };
+      this.mediaRecorder.start();
+    } catch (e) {
+      console.warn('Failed to start recording', e);
+      this.recording = false;
+      this.recordingQuestionId = null;
+    }
+  }
+
+  // Stop recording and finalize Blob/File for the question
+  async stopRecording(): Promise<void> {
+    if (!this.recordingQuestionId || !this.mediaRecorder) return;
+    const qid = this.recordingQuestionId;
+    return new Promise((resolve) => {
+      this.mediaRecorder!.onstop = () => {
+        const chunks = this.audioChunks[qid] || [];
+        const blob = new Blob(chunks, { type: 'audio/webm' }); // webm is widely supported; backend can convert if needed
+        this.audioBlobs[qid] = blob;
+        const filename = `speaking_${qid}_${Date.now()}.webm`;
+        const file = new File([blob], filename, { type: blob.type });
+        this.audioFiles[qid] = file;
+        try {
+          this.audioUrls[qid] = URL.createObjectURL(blob);
+        } catch {}
+        // cleanup stream
+        if (this.mediaStream) {
+          this.mediaStream.getTracks().forEach((t) => t.stop());
+        }
+        this.mediaRecorder = null;
+        this.mediaStream = null;
+        this.recording = false;
+        this.recordingQuestionId = null;
+        resolve();
+      };
+      try {
+        this.mediaRecorder!.stop();
+      } catch {
+        // If stop throws, still attempt cleanup
+        this.mediaRecorder = null;
+        this.mediaStream?.getTracks().forEach((t) => t.stop());
+        this.mediaStream = null;
+        this.recording = false;
+        this.recordingQuestionId = null;
+        resolve();
+      }
+    });
+  }
+
+  // Optional helper: remove recorded audio for a question
+  removeRecording(questionId: string) {
+    delete this.audioChunks[questionId];
+    delete this.audioBlobs[questionId];
+    if (this.audioUrls[questionId]) {
+      try { URL.revokeObjectURL(this.audioUrls[questionId]); } catch {}
+      delete this.audioUrls[questionId];
+    }
+    delete this.audioFiles[questionId];
+  }
+
+  // Receive recorded audio emitted from child `app-quiz` component
+  onChildAudioCaptured(event: { questionId: string; file: File }) {
+    const qid = String(event.questionId);
+    this.audioFiles[qid] = event.file;
+    this.audioBlobs[qid] = event.file;
+    try { this.audioUrls[qid] = URL.createObjectURL(event.file); } catch {}
   }
 
   private applySectionResult(index: number, section: QuizSectionView) {
