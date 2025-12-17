@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { finalize, take } from 'rxjs';
+import { marked } from 'marked';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ButtonComponent } from '../shared/button/button.component';
 import { AdminService, Course } from '../../services/admin.service';
 
@@ -26,11 +28,31 @@ export class CoursesComponent implements OnInit {
   courses: CourseItem[] = [];
   loading = false;
   errorMessage?: string;
+  markdownSample = `
+# Markdown test\n## Heading level 2
+## Heading level 2 \n## Heading level 3
 
-  constructor(private router: Router, private adminService: AdminService) {}
+- Item 1
+- Item 2
+- **Bold text**
+- *Italic text*
+
+\`\`\`ts
+console.log('Hello Markdown');
+\`\`\`
+`;
+  sample = "**Nhận xét chung**: Bài làm của bạn rất ấn tượng với tư duy mạch lạc và cách trình bày sáng tạo. Tôi thực sự đánh giá cao nỗ lực của bạn trong việc hoàn thành bài tập này. Hãy tiếp tục phát huy tinh thần học hỏi tuyệt vời này nhé!\n\n**Điểm mạnh**:\n- Bố cục bài viết rất chặt chẽ, dễ theo dõi.\n- Bạn đã vận dụng tốt các cấu trúc câu phức để diễn đạt ý tưởng.\n- Lập luận có chiều sâu và dẫn chứng thuyết phục.\n\n**Điểm cần cải thiện**:\n- **Lỗi ngữ pháp**: Trong câu \"The data show that...\", lưu ý nếu \"data\" được dùng như danh từ không đếm được trong ngữ cảnh này, động từ nên chia là \"shows\".\n- **Lỗi chính tả**: Từ \"environment\" bị viết thiếu chữ \"n\" ở đoạn 2.\n- **Cách dùng từ**: Cố gắng tránh lặp lại từ \"good\" quá nhiều, thay vào đó hãy dùng các tính từ miêu tả cụ thể hơn.\n\n**Gợi ý từ vựng nâng cao**:\n1. **Mitigate** (v): Giảm thiểu (thường dùng cho hậu quả, rủi ro).\n2. **Detrimental** (adj): Có hại, gây bất lợi (tương đương với harmful).\n3. **Imperative** (adj): Cấp bách, tối quan trọng.\n4. **Substantial** (adj): Đáng kể, to lớn.";
+
+  markdownHtml?: SafeHtml;
+  markdownHtml1?: SafeHtml;
+  constructor(private router: Router, private adminService: AdminService, private sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
     this.loadCourses();
+    const html = marked(this.markdownSample) as string;
+    this.markdownHtml = this.sanitizer.bypassSecurityTrustHtml(html);
+    const html1 = marked(this.sample) as string;
+    this.markdownHtml1 = this.sanitizer.bypassSecurityTrustHtml(html1);
   }
 
   goDetail(id: number) {

@@ -196,6 +196,7 @@ CREATE TABLE quiz (
 CREATE TABLE question (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     quiz_id BIGINT NOT NULL,
+    section INT, -- section ở đây là các phần của từng kỹ năng trong quiz, không phải section trong course.
     content TEXT NOT NULL,
     audio_url VARCHAR(500) DEFAULT NULL, -- dành cho câu listening  
     options JSON, 
@@ -430,27 +431,30 @@ INSERT INTO quiz (id, lesson_id, title, pass_score, duration) VALUES
 -- ====================================================
 -- 1. Listening (Có Audio, Có Options)
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(1, 'LISTENING', 'What time does the library close on Sundays?', 'https://files.com/audio/lib_hours.mp3',
+(1, 'LISTENING', 1, 'What time does the library close on Sundays?', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "4 PM", "B": "6 PM", "C": "8 PM", "D": "Closed"}', 'A', 'Speaker mentions Sunday hours are shorter, closing at 4 PM.'),
 
-(1, 'LISTENING', 'Where is the new student center located?', 'https://files.com/audio/map.mp3',
+(1, 'LISTENING', 2, 'Where is the new student center located?', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "Next to the gym", "B": "Behind the library", "C": "Opposite the cafeteria", "D": "Near the main gate"}', 'C', 'The map description points to the building across from the cafeteria.');
 
 -- 2. Reading (Không Audio, Có Options)
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(1, 'READING', 'According to the paragraph, why do birds migrate?', NULL,
+(1, 'READING', 1, 'According to the paragraph, why do birds migrate?', NULL,
 '{"A": "To find food", "B": "To avoid predators", "C": "To find a mate", "D": "To explore new lands"}', 'A', 'The text explicitly states food scarcity drives migration.'),
 
-(1, 'READING', 'The word "detrimental" in line 5 is closest in meaning to:', NULL,
+(1, 'READING', 2, 'The word "detrimental" in line 5 is closest in meaning to:', NULL,
 '{"A": "Beneficial", "B": "Harmful", "C": "Neutral", "D": "Significant"}', 'B', 'Context clues suggest a negative impact.');
 
 -- 3. Writing (Không Audio, Không Options - Tự luận)
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(1, 'WRITING', 'Task 1: Write a letter to your friend apologizing for missing their birthday party. (At least 150 words)', NULL, NULL, NULL, NULL);
+(1, 'WRITING', 1, 'Task 1: Write a letter to your friend apologizing for missing their birthday party. (At least 150 words)', NULL, NULL, NULL, NULL);
+
+INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
+(1, 'WRITING', 2, 'Task 2: Write a letter to your friend congratulating their birthday party. (At least 150 words)', NULL, NULL, NULL, NULL);
 
 -- 4. Speaking (Có thể có Audio đề bài, Không Options)
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(1, 'SPEAKING', 'Part 2: Describe a favorite toy you had as a child. You should say: what it was, who gave it to you, and why you liked it.', 'https://files.com/audio/speak_prompt1.mp3', NULL, NULL, NULL);
+(1, 'SPEAKING', NULL, 'Part 2: Describe a favorite toy you had as a child. You should say: what it was, who gave it to you, and why you liked it.', 'https://files.com/audio/speak_prompt1.mp3', NULL, NULL, NULL);
 
 
 -- ====================================================
@@ -458,27 +462,27 @@ INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_optio
 -- ====================================================
 -- 1. Listening
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(3, 'LISTENING', 'How much does the platinum membership cost?', 'https://files.com/audio/gym.mp3',
+(3, 'LISTENING', 1,  'How much does the platinum membership cost?', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "$50", "B": "$75", "C": "$100", "D": "$120"}', 'C', 'It is mentioned after the discount is applied.'),
 
-(3, 'LISTENING', 'What implies the speaker about the project deadline?', 'https://files.com/audio/meeting.mp3',
+(3, 'LISTENING', 2, 'What implies the speaker about the project deadline?', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "It is flexible", "B": "It is strict", "C": "It has been extended", "D": "It is unknown"}', 'B', 'He stresses that no extensions will be granted.');
 
 -- 2. Reading
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(3, 'READING', 'Which title best fits the passage?', NULL,
+(3, 'READING', 1, 'Which title best fits the passage?', NULL,
 '{"A": "The Rise of AI", "B": "Dangers of Technology", "C": "AI in Healthcare", "D": "History of Computers"}', 'C', 'The passage focuses solely on medical applications.'),
 
-(3, 'READING', 'What is NOT mentioned as a side effect?', NULL,
+(3, 'READING', 2, 'What is NOT mentioned as a side effect?', NULL,
 '{"A": "Headache", "B": "Nausea", "C": "Dizziness", "D": "Fatigue"}', 'D', 'Fatigue appears in the next paragraph, not the listed effects.');
 
 -- 3. Writing
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(3, 'WRITING', 'Task 2: Some people believe that video games are bad for children. Discuss both views and give your opinion.', NULL, NULL, NULL, NULL);
+(3, 'WRITING', 2, 'Task 2: Some people believe that video games are bad for children. Discuss both views and give your opinion.', NULL, NULL, NULL, NULL);
 
 -- 4. Speaking
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(3, 'SPEAKING', 'Part 3: Do you think technology has made people more isolated? Why or why not?', NULL, NULL, NULL, NULL);
+(3, 'SPEAKING', NULL, 'Do you think technology has made people more isolated? Why or why not?', NULL, NULL, NULL, NULL);
 
 
 -- ====================================================
@@ -487,24 +491,24 @@ INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_optio
 
 -- 1. Listening
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(5, 'LISTENING', 'The lecturer suggests that the primary cause of the decline was:', 'https://files.com/audio/lecture.mp3',
+(5, 'LISTENING', 1, 'The lecturer suggests that the primary cause of the decline was:', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "Climate change", "B": "Overhunting", "C": "Disease", "D": "Habitat loss"}', 'D', 'He emphasizes deforestation above all other factors.'),
 
-(5, 'LISTENING', 'What action does the student decide to take?', 'https://files.com/audio/advisor.mp3',
+(5, 'LISTENING', 2, 'What action does the student decide to take?', 'https://res.cloudinary.com/dfxszfzyb/video/upload/v1764128740/Listening_Test_1_Section_1_qlve8c.m4a',
 '{"A": "Drop the course", "B": "Change majors", "C": "Hire a tutor", "D": "Talk to the professor"}', 'A', 'She mentions filling out the withdrawal form.');
 
 -- 2. Reading
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(5, 'READING', 'The author uses the example of the steam engine to illustrate:', NULL,
+(5, 'READING', 1, 'The author uses the example of the steam engine to illustrate:', NULL,
 '{"A": "Technological stagnation", "B": "Industrial revolution", "C": "Paradigm shifts", "D": "Economic collapse"}', 'C', 'It serves as a metaphor for changing worldviews.'),
 
-(5, 'READING', 'It can be inferred from the text that the experiment:', NULL,
+(5, 'READING', 2, 'It can be inferred from the text that the experiment:', NULL,
 '{"A": "Failed completely", "B": "Yielded unexpected results", "C": "Was unethical", "D": "Cost too much"}', 'B', 'The results surprised the researchers.');
 
 -- 3. Writing
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(5, 'WRITING', 'Task 1: The chart below shows the percentage of households with internet access in 2000 vs 2020. Summarize the information.', NULL, NULL, NULL, NULL);
+(5, 'WRITING', 1, 'Task 1: The chart below shows the percentage of households with internet access in 2000 vs 2020. Summarize the information.', NULL, NULL, NULL, NULL);
 
 -- 4. Speaking
 INSERT INTO question (quiz_id, skill, content, audio_url, options, correct_option, explanation) VALUES
-(5, 'SPEAKING', 'Part 2: Describe a difficult decision you had to make. You should say: what the decision was, why it was difficult, and how you feel about it now.', NULL, NULL, NULL, NULL);
+(5, 'SPEAKING', NULL, 'Describe a difficult decision you had to make. You should say: what the decision was, why it was difficult, and how you feel about it now.', NULL, NULL, NULL, NULL);

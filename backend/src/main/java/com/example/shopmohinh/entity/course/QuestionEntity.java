@@ -20,6 +20,9 @@ public class QuestionEntity {
     @JoinColumn(name = "quiz_id", nullable = false)
     private QuizEntity quiz;
 
+    @Column(name = "section")
+    private Integer section; // section number inside the quiz (e.g., Task 1/Task 2 for Writing)
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
@@ -39,4 +42,3 @@ public class QuestionEntity {
     @Column(length = 50)
     private String skill; // LISTENING / SPEAKING / WRITING / READING
 }
-

@@ -23,12 +23,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.io.IOException;
+
+import com.example.shopmohinh.dto.response.course.WritingGradingResult;
 
 @Service
 public class QuizSubmissionService {
 
     FileUploadUtil fileUploadUtil;
-    GeminiService gradingService;
+    private final GeminiService geminiService;
 
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
@@ -36,12 +39,13 @@ public class QuizSubmissionService {
     private final SubmissionAnswerRepository answerRepository;
     private final UserRepository userRepository;
 
-    public QuizSubmissionService(QuizRepository quizRepository, QuestionRepository questionRepository, QuizSubmissionRepository submissionRepository, SubmissionAnswerRepository answerRepository, UserRepository userRepository, FileUploadUtil fileUploadUtil) {
+    public QuizSubmissionService(QuizRepository quizRepository, QuestionRepository questionRepository, QuizSubmissionRepository submissionRepository, SubmissionAnswerRepository answerRepository, UserRepository userRepository, GeminiService geminiService, FileUploadUtil fileUploadUtil) {
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
         this.submissionRepository = submissionRepository;
         this.answerRepository = answerRepository;
         this.userRepository = userRepository;
+        this.geminiService = geminiService;
         this.fileUploadUtil = fileUploadUtil;
     }
 
@@ -99,6 +103,29 @@ public class QuizSubmissionService {
         }
 
         if (questionSkill.equals("WRITING")) {
+
+            // Prepare inputs for Gemini grading
+            String essayContent = entity.getTextAnswer();
+            String essayTopic = question.getContent();
+            Integer section = question.getSection();
+
+            try {
+                WritingGradingResult result = geminiService.gradeWriting(section, essayTopic, essayContent == null ? "" : essayContent);
+                if (result != null) {
+                    // store overall band into gradeScore (if available)
+                    if (result.getOverallBand() != null) {
+                        entity.setGradeScore(BigDecimal.valueOf(result.getOverallBand()).setScale(2, RoundingMode.HALF_UP));
+                    }
+
+                    // store textual feedback into teacherNote
+                    if (result.getFeedback() != null) {
+                        entity.setTeacherNote(result.getFeedback());
+                    }
+                }
+            } catch (IOException e) {
+                // On error, save an error note so teacher can see
+                entity.setTeacherNote("Lỗi khi chấm tự động: " + e.getMessage());
+            }
 
         }
 
