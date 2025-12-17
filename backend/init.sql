@@ -242,8 +242,8 @@ CREATE TABLE submission_answer (
     -- TRƯỜNG HỢP 3: Speaking (Ghi âm)
     audio_url VARCHAR(500),      -- Link file ghi âm user nói
     
-    -- Phần chấm điểm riêng cho từng câu (Dành cho GV chấm Writing/Speaking)
-    grade_score DECIMAL(5, 2) DEFAULT 0, -- Điểm giáo viên cho riêng câu này
+    -- Phần chấm điểm riêng cho từng câu (Dành cho chấm Writing/Speaking)
+    grade_score DECIMAL(5, 2) DEFAULT 0, -- Điểm cho riêng câu này
     teacher_note TEXT,                   -- Nhận xét chi tiết (VD: "Sai ngữ pháp câu đầu")
     
     FOREIGN KEY (submission_id) REFERENCES quiz_submission(id) ON DELETE CASCADE,

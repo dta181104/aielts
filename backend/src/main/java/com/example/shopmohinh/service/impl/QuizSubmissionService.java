@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 public class QuizSubmissionService {
 
     FileUploadUtil fileUploadUtil;
+    GeminiService gradingService;
 
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
@@ -63,6 +64,7 @@ public class QuizSubmissionService {
     public SubmissionAnswerResponse addOrUpdateAnswer(Long submissionId, SubmissionAnswerRequest req) {
         QuizSubmissionEntity submission = submissionRepository.findById(submissionId).orElseThrow(() -> new RuntimeException("Submission not found"));
         QuestionEntity question = questionRepository.findById(req.getQuestionId()).orElseThrow(() -> new RuntimeException("Question not found"));
+        String questionSkill = question.getSkill();
 
         Optional<SubmissionAnswerEntity> existing = answerRepository.findBySubmissionId(submissionId)
                 .stream()
@@ -81,10 +83,7 @@ public class QuizSubmissionService {
         entity.setSelectedOption(req.getSelectedOption());
         entity.setTextAnswer(req.getTextAnswer());
 //        entity.setAudioUrl(req.getAudioUrl());
-        if (req.getAudioFile() != null) {
-            if (fileUploadUtil == null) {
-                throw new RuntimeException("FileUploadUtil is not configured");
-            }
+        if (questionSkill.equals("SPEAKING") && req.getAudioFile() != null) {
             String folderName = "AIELTS/submission/question_" + question.getId();
             String customFileName = "question_" + question.getId() + "_submission_" + submissionId;
             String audioUrl = fileUploadUtil.uploadAudio(req.getAudioFile(), folderName, customFileName);
@@ -92,10 +91,15 @@ public class QuizSubmissionService {
         }
 
         // Auto-evaluate for MCQ
-        if (entity.getSelectedOption() != null && question.getCorrectOption() != null) {
+        if ( (questionSkill.equals("LISTENING") || questionSkill.equals("READING")) &&
+                entity.getSelectedOption() != null && question.getCorrectOption() != null) {
             entity.setIsCorrect(entity.getSelectedOption().equalsIgnoreCase(question.getCorrectOption()));
         } else {
             entity.setIsCorrect(null);
+        }
+
+        if (questionSkill.equals("WRITING")) {
+
         }
 
         SubmissionAnswerEntity saved = answerRepository.save(entity);
