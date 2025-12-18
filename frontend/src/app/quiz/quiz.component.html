@@ -72,7 +72,7 @@
     </div>
   </form>
 
-  <section *ngIf="quizSubmitted" class="quiz-review">
+  <section *ngIf="quizSubmitted && allowDetailedReview" class="quiz-review">
     <div class="review-header">
       <h4>Kết quả chi tiết</h4>
       <button type="button" class="toggle-review-btn" (click)="toggleReviewVisibility()">

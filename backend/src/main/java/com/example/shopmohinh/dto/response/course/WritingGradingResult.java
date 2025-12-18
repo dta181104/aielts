@@ -20,6 +20,24 @@ public class WritingGradingResult {
     private Double lrScore; // Lexical Resource
     private Double graScore; // Grammatical Range and Accuracy
 
-    private String feedback;
+    // Changed from String to a structured object to match Gemini's JSON schema
+    private Feedback feedback;
+
+    // Nested class representing detailed feedback structure returned by Gemini
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Feedback {
+        private String generalFeedback;
+        private String strongPoints;
+        private String weakPoints;
+        // Gemini will return either taFeedback or trFeedback depending on section; include both to be safe
+        private String taFeedback;
+        private String trFeedback;
+        private String ccFeedback;
+        private String lrFeedback;
+        private String graFeedback;
+    }
 
 }

@@ -41,12 +41,56 @@
         [quizSubmitted]="quizSubmitted"
         [quizAutoScore]="quizAutoScore"
         [quizAutoTotal]="quizAutoTotal"
+        [allowDetailedReview]="isCurrentSectionDetailedReviewAllowed"
         (cancel)="onCancel()"
         (submitted)="submitSection(currentSectionIndex!)"
         (audioCaptured)="onChildAudioCaptured($event)"
       ></app-quiz>
       <div *ngIf="quizSubmitted" class="result" style="margin-top:12px">
-        <strong>Kết quả tự chấm phần này:</strong> {{ quizAutoScore }} / {{ quizAutoTotal }}
+        <ng-container *ngIf="isCurrentSectionAiGraded; else autoResult">
+          <ng-container *ngIf="isCurrentSectionWriting; else speakingAi">
+            <div style="font-size: 18px; font-weight: 600">Kết quả chấm của AI:</div>
+            <div *ngFor="let q of (quizSections[0]?.questions || [])" style="margin-top:16px">
+              <div style="font-size:18px; font-weight: 600">*Câu {{ q.id }}:</div>
+              <div style="margin-top:6px">
+                <strong>Điểm:</strong>
+                <ng-container
+                  *ngTemplateOutlet="aiScoreValue; context: { score: currentAiByQuestion[q.id]?.score }"
+                ></ng-container>
+              </div>
+              <div *ngIf="currentAiByQuestion[q.id]?.teacherNote" style="margin-top:10px">
+                <ng-container
+                  *ngTemplateOutlet="aiNote; context: { html: aiMarkdownByQuestion[q.id] }"
+                ></ng-container>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #speakingAi>
+            <div>
+              <span style="font-size: 18px; font-weight: 600">Kết quả chấm từ AI: </span>
+              <ng-container *ngTemplateOutlet="aiScoreValue; context: { score: aiGradeScore }"></ng-container>
+            </div>
+            <div *ngIf="aiTeacherNote" style="margin-top:30px">
+              <ng-container *ngTemplateOutlet="aiNote; context: { html: markdownHtml }"></ng-container>
+            </div>
+          </ng-template>
+
+          <ng-template #aiScoreValue let-score="score">
+            <span *ngIf="score !== null && score !== undefined; else pendingAi">
+              {{ score | number: '1.1-1' }}
+            </span>
+            <ng-template #pendingAi>Chưa chấm</ng-template>
+          </ng-template>
+
+          <ng-template #aiNote let-html="html">
+            <div style="font-weight: 600">Nhận xét:</div>
+            <div [innerHTML]="html"></div>
+          </ng-template>
+        </ng-container>
+        <ng-template #autoResult>
+          <strong>Kết quả tự chấm phần này:</strong> {{ quizAutoScore }} / {{ quizAutoTotal }}
+        </ng-template>
       </div>
     </div>
   </div>

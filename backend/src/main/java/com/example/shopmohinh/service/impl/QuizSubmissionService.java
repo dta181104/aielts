@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.io.IOException;
+import java.util.Locale;
 
 import com.example.shopmohinh.dto.response.course.WritingGradingResult;
 
@@ -114,12 +115,64 @@ public class QuizSubmissionService {
                 if (result != null) {
                     // store overall band into gradeScore (if available)
                     if (result.getOverallBand() != null) {
-                        entity.setGradeScore(BigDecimal.valueOf(result.getOverallBand()).setScale(2, RoundingMode.HALF_UP));
+                        // use 1 decimal place for overall band (e.g., 7.0) per IELTS convention
+                        entity.setGradeScore(BigDecimal.valueOf(result.getOverallBand()).setScale(1, RoundingMode.HALF_UP));
                     }
 
-                    // store textual feedback into teacherNote
+                    // build markdown teacher note from structured feedback
                     if (result.getFeedback() != null) {
-                        entity.setTeacherNote(result.getFeedback());
+                        WritingGradingResult.Feedback fb = result.getFeedback();
+                        StringBuilder md = new StringBuilder();
+
+                        if (fb.getGeneralFeedback() != null && !fb.getGeneralFeedback().isBlank()) {
+                            md.append("- **Nhận xét chung**: ").append(fb.getGeneralFeedback()).append("\n\n");
+                        }
+
+                        if (fb.getStrongPoints() != null && !fb.getStrongPoints().isBlank()) {
+                            md.append("- **Điểm mạnh**: ").append(fb.getStrongPoints()).append("\n\n");
+                        }
+
+                        if (fb.getWeakPoints() != null && !fb.getWeakPoints().isBlank()) {
+                            md.append("- **Điểm yếu**: ").append(fb.getWeakPoints()).append("\n\n");
+                        }
+
+                        // Scores per criteria (force dot decimal using Locale.US)
+                        Double ta = result.getTaScore();
+                        Double tr = result.getTrScore();
+                        if (ta != null) {
+                            md.append("- **Task Achievement**: ").append(String.format(Locale.US, "%.1f", ta)).append("\n\n");
+                        } else if (tr != null) {
+                            md.append("- **Task Response**: ").append(String.format(Locale.US, "%.1f", tr)).append("\n\n");
+                        }
+
+                        if (result.getCcScore() != null) {
+                            md.append("- **Coherence and Cohesion**: ").append(String.format(Locale.US, "%.1f", result.getCcScore())).append("\n\n");
+                        }
+                        if (result.getLrScore() != null) {
+                            md.append("- **Lexical Resource**: ").append(String.format(Locale.US, "%.1f", result.getLrScore())).append("\n\n");
+                        }
+                        if (result.getGraScore() != null) {
+                            md.append("- **Grammatical Range and Accuracy**: ").append(String.format(Locale.US, "%.1f", result.getGraScore())).append("\n\n");
+                        }
+
+                        // Detailed per-criterion feedback (if provided)
+                        if (fb.getTaFeedback() != null && !fb.getTaFeedback().isBlank()) {
+                            md.append("- **Task Achievement feedback**: ").append(fb.getTaFeedback()).append("\n\n");
+                        }
+                        if (fb.getTrFeedback() != null && !fb.getTrFeedback().isBlank()) {
+                            md.append("- **Task Response feedback**: ").append(fb.getTrFeedback()).append("\n\n");
+                        }
+                        if (fb.getCcFeedback() != null && !fb.getCcFeedback().isBlank()) {
+                            md.append("- **Coherence and Cohesion feedback**: ").append(fb.getCcFeedback()).append("\n\n");
+                        }
+                        if (fb.getLrFeedback() != null && !fb.getLrFeedback().isBlank()) {
+                            md.append("- **Lexical Resource feedback**: ").append(fb.getLrFeedback()).append("\n\n");
+                        }
+                        if (fb.getGraFeedback() != null && !fb.getGraFeedback().isBlank()) {
+                            md.append("- **Grammatical Range and Accuracy feedback**: ").append(fb.getGraFeedback()).append("\n\n");
+                        }
+
+                        entity.setTeacherNote(md.toString().trim());
                     }
                 }
             } catch (IOException e) {
@@ -215,3 +268,4 @@ public class QuizSubmissionService {
                 .build();
     }
 }
+

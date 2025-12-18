@@ -33,6 +33,7 @@ export class QuizComponent implements OnDestroy {
   @Input() quizAutoScore: number | null = null;
   @Input() quizAutoTotal = 0;
   @Input() submitLabel = 'Nộp bài';
+  @Input() allowDetailedReview = true;
 
   @Output() cancel = new EventEmitter<void>();
   @Output() submitted = new EventEmitter<void>();

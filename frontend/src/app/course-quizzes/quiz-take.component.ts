@@ -4,8 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { QuizComponent } from '../quiz/quiz.component';
 import { ButtonComponent } from '../shared/button/button.component';
+import { marked } from 'marked';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AdminService, Quiz, Question as AdminQuestion } from '../../services/admin.service';
-import { QuizSubmissionService, SubmissionAnswerPayload } from '../../services/quiz-submission.service';
+import {
+  QuizSubmissionService,
+  SubmissionAnswerResponse,
+  QuizSubmissionResponse,
+} from '../../services/quiz-submission.service';
 import { of, forkJoin } from 'rxjs';
 import { finalize, take } from 'rxjs/operators';
 
@@ -36,6 +42,9 @@ interface SectionResult {
   autoTotal: number;
   answers: { [id: string]: string };
   textAnswers: { [id: string]: string };
+  aiScore?: number | null;
+  teacherNote?: string | null;
+  aiByQuestion?: Record<string, { score: number | null; teacherNote: string | null }>;
   timestamp: string;
 }
 
@@ -57,6 +66,15 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   quizSubmitted = false;
   quizAutoScore: number | null = null;
   private latestAutoTotal: number | null = null;
+  aiGradeScore: number | null = null;
+  private _aiTeacherNote: string | null = null;
+  get aiTeacherNote(): string | null {
+    return this._aiTeacherNote;
+  }
+  set aiTeacherNote(value: string | null) {
+    this._aiTeacherNote = value;
+    this.updateFeedback(value);
+  }
   submissionId: number | null = null;
   userId?: number;
   savingSection = false;
@@ -85,6 +103,26 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   private readonly mandatorySectionKeys = ['listening', 'reading', 'writing', 'speaking'];
   private readonly optionLetters = Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
+  get currentSectionId(): string | null {
+    if (this.currentSectionIndex === null) {
+      return null;
+    }
+    return this.sectionOrder[this.currentSectionIndex] ?? null;
+  }
+
+  get isCurrentSectionAiGraded(): boolean {
+    return this.isAiGradedSection(this.currentSectionId);
+  }
+
+  get isCurrentSectionWriting(): boolean {
+    return (this.currentSectionId || '').toLowerCase() === 'writing';
+  }
+
+  get isCurrentSectionDetailedReviewAllowed(): boolean {
+    const sid = (this.currentSectionId || '').toLowerCase();
+    return sid === 'listening' || sid === 'reading';
+  }
+
   get quizAutoTotal(): number {
     if (this.latestAutoTotal !== null) {
       return this.latestAutoTotal;
@@ -92,11 +130,16 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     return this.computeSectionTotal(this.quizSections);
   }
 
+  markdownHtml?: SafeHtml;
+  currentAiByQuestion: Record<string, { score: number | null; teacherNote: string | null }> = {};
+  aiMarkdownByQuestion: Record<string, SafeHtml> = {};
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private admin: AdminService,
-    private quizSubmission: QuizSubmissionService
+    private quizSubmission: QuizSubmissionService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -115,11 +158,13 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.loadQuizDetail(this.quizId);
   }
 
+  private updateFeedback(note: string | null) {
+    this.markdownHtml = this.renderMarkdown(note);
+  }
+
   ngOnDestroy(): void {
     this.clearActiveTimer();
   }
-
-  
 
   onCancel() {
     if (this.courseId) {
@@ -143,6 +188,10 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = !!sr;
     this.quizAutoScore = sr?.autoScore ?? null;
     this.latestAutoTotal = sr?.autoTotal ?? this.computeSectionTotal(this.quizSections);
+    this.aiGradeScore = sr?.aiScore ?? null;
+    this.aiTeacherNote = sr?.teacherNote ?? null;
+    this.currentAiByQuestion = sr?.aiByQuestion ?? {};
+    this.aiMarkdownByQuestion = this.renderMarkdownMap(this.currentAiByQuestion);
     this.resumeTimerIfNeeded(id);
   }
 
@@ -162,6 +211,10 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = false;
     this.quizAutoScore = null;
     this.latestAutoTotal = this.computeSectionTotal(this.quizSections);
+    this.aiGradeScore = null;
+    this.aiTeacherNote = null;
+    this.currentAiByQuestion = {};
+    this.aiMarkdownByQuestion = {};
     this.startTimerForSection(id);
   }
 
@@ -183,8 +236,13 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
       return;
     }
     this.savingSection = true;
-    const finalizeSection = () => {
-      this.applySectionResult(index, section);
+    const finalizeSection = (responses?: SubmissionAnswerResponse[] | null) => {
+      const ai = this.isAiGradedSection(id) ? this.computeAiGradeFromResponses(responses) : null;
+      const aiByQuestion = this.isAiGradedSection(id) ? this.computeAiByQuestionFromResponses(responses) : {};
+      this.applySectionResult(index, section, ai?.score ?? null, ai?.teacherNote ?? null, aiByQuestion);
+      if (this.isAiGradedSection(id) && (!ai?.score && !ai?.teacherNote)) {
+        this.refreshAiGradeForSection(id);
+      }
     };
     this.persistSectionAnswers(section)
       .pipe(
@@ -192,10 +250,10 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
         finalize(() => (this.savingSection = false))
       )
       .subscribe({
-        next: () => finalizeSection(),
+        next: (responses: SubmissionAnswerResponse[] | any) => finalizeSection(responses as SubmissionAnswerResponse[]),
         error: (error: unknown) => {
           console.warn('Failed to sync answers for section', section.id, error);
-          finalizeSection();
+          finalizeSection(null);
         },
       });
   }
@@ -257,7 +315,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     if (!this.submissionId || !this.quizId || !this.userId) {
       return of([]);
     }
-    const calls: import('rxjs').Observable<any>[] = [];
+    const calls: import('rxjs').Observable<SubmissionAnswerResponse>[] = [];
     section.questions.forEach((question) => {
       const numericId = Number(question.id);
       if (!Number.isFinite(numericId)) {
@@ -386,7 +444,13 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     try { this.audioUrls[qid] = URL.createObjectURL(event.file); } catch {}
   }
 
-  private applySectionResult(index: number, section: QuizSectionView) {
+  private applySectionResult(
+    index: number,
+    section: QuizSectionView,
+    aiScore: number | null,
+    teacherNote: string | null,
+    aiByQuestion: Record<string, { score: number | null; teacherNote: string | null }>
+  ) {
     const id = this.sectionOrder[index];
     let autoTotal = 0;
     let autoScore = 0;
@@ -404,6 +468,9 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
       autoTotal,
       answers: { ...this.answers },
       textAnswers: { ...this.textAnswers },
+      aiScore,
+      teacherNote,
+      aiByQuestion,
       timestamp: new Date().toISOString(),
     };
     this.sectionCompleted[id] = true;
@@ -411,6 +478,10 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
     this.quizSubmitted = true;
     this.quizAutoScore = autoScore;
     this.latestAutoTotal = autoTotal;
+    this.aiGradeScore = aiScore;
+    this.aiTeacherNote = teacherNote;
+    this.currentAiByQuestion = aiByQuestion;
+    this.aiMarkdownByQuestion = this.renderMarkdownMap(this.currentAiByQuestion);
   }
 
   private resolveUserId(): number | undefined {
@@ -537,28 +608,58 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
           this.submissionId = preferred.id ?? null;
 
           // build question -> section map
-          const qToSection: Record<string, string> = {};
-          Object.keys(this.sectionDefinitions || {}).forEach((sid) => {
-            (this.sectionDefinitions[sid].questions || []).forEach((q) => {
-              qToSection[String(q.id)] = sid;
-            });
-          });
+          const qToSection = this.buildQuestionToSectionMap();
 
           // reset
           this.answers = {};
           this.textAnswers = {};
           this.sectionResults = {};
 
+          const aiScoreBuckets: Record<string, number[]> = {};
+          const aiNoteBuckets: Record<string, string[]> = {};
+          const aiByQuestionBuckets: Record<string, Record<string, { score: number | null; teacherNote: string | null }>> = {};
+
           (preferred.answers || []).forEach((ans) => {
             const qid = String(ans.questionId);
-            if (ans.selectedOption) this.answers[qid] = String(ans.selectedOption);
-            if (ans.textAnswer) this.textAnswers[qid] = String(ans.textAnswer);
             const sid = qToSection[qid] || 'general';
             if (!this.sectionResults[sid]) {
-              this.sectionResults[sid] = { autoScore: 0, autoTotal: 0, answers: {}, textAnswers: {}, timestamp: preferred.submitTime || preferred.startTime || new Date().toISOString() };
+              this.sectionResults[sid] = {
+                autoScore: 0,
+                autoTotal: 0,
+                answers: {},
+                textAnswers: {},
+                aiScore: null,
+                teacherNote: null,
+                aiByQuestion: {},
+                timestamp: preferred.submitTime || preferred.startTime || new Date().toISOString(),
+              };
             }
+
+            if (ans.selectedOption) this.answers[qid] = String(ans.selectedOption);
+            if (ans.textAnswer) this.textAnswers[qid] = String(ans.textAnswer);
             if (ans.selectedOption) this.sectionResults[sid].answers[qid] = String(ans.selectedOption);
             if (ans.textAnswer) this.sectionResults[sid].textAnswers[qid] = String(ans.textAnswer);
+
+            if (ans.gradeScore !== null && ans.gradeScore !== undefined) {
+              aiScoreBuckets[sid] = aiScoreBuckets[sid] || [];
+              aiScoreBuckets[sid].push(Number(ans.gradeScore));
+            }
+            if (ans.teacherNote && String(ans.teacherNote).trim()) {
+              aiNoteBuckets[sid] = aiNoteBuckets[sid] || [];
+              aiNoteBuckets[sid].push(String(ans.teacherNote).trim());
+            }
+
+            // per-question AI grade for Writing/Speaking
+            if (ans.gradeScore !== null && ans.gradeScore !== undefined || (ans.teacherNote && String(ans.teacherNote).trim())) {
+              aiByQuestionBuckets[sid] = aiByQuestionBuckets[sid] || {};
+              const scoreRaw = ans.gradeScore;
+              const score = scoreRaw === null || scoreRaw === undefined ? null : Number(scoreRaw);
+              const teacherNote = ans.teacherNote && String(ans.teacherNote).trim() ? String(ans.teacherNote).trim() : null;
+              aiByQuestionBuckets[sid][qid] = {
+                score: Number.isFinite(score as any) ? (score as number) : null,
+                teacherNote,
+              };
+            }
           });
 
           // compute auto scores per section
@@ -575,6 +676,16 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
             });
             this.sectionResults[sid].autoTotal = autoTotal;
             this.sectionResults[sid].autoScore = autoScore;
+
+            const scores = aiScoreBuckets[sid] || [];
+            this.sectionResults[sid].aiScore = scores.length
+              ? scores.reduce((sum, val) => sum + val, 0) / scores.length
+              : null;
+            const notes = Array.from(new Set(aiNoteBuckets[sid] || [])).filter(Boolean);
+            this.sectionResults[sid].teacherNote = notes.length ? notes.join('\n\n') : null;
+
+            this.sectionResults[sid].aiByQuestion = aiByQuestionBuckets[sid] || {};
+
             this.sectionStarted[sid] = true;
             this.sectionCompleted[sid] = true;
           });
@@ -582,10 +693,155 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
           this.quizSubmitted = !!preferred.submitTime;
           this.quizAutoScore = Object.values(this.sectionResults).reduce((s, r) => s + (r.autoScore || 0), 0);
           this.latestAutoTotal = Object.values(this.sectionResults).reduce((s, r) => s + (r.autoTotal || 0), 0);
+
+          // If user is currently viewing a section, refresh AI result bindings
+          if (this.currentSectionId && this.sectionResults[this.currentSectionId]) {
+            this.aiGradeScore = this.sectionResults[this.currentSectionId].aiScore ?? null;
+            this.aiTeacherNote = this.sectionResults[this.currentSectionId].teacherNote ?? null;
+            this.currentAiByQuestion = this.sectionResults[this.currentSectionId].aiByQuestion ?? {};
+            this.aiMarkdownByQuestion = this.renderMarkdownMap(this.currentAiByQuestion);
+          }
         },
         error: (e) => {
           console.warn('Failed to fetch user submissions', e);
         },
+      });
+  }
+
+  private isAiGradedSection(sectionId: string | null | undefined): boolean {
+    const sid = (sectionId || '').toLowerCase();
+    return sid === 'writing' || sid === 'speaking';
+  }
+
+  private computeAiGradeFromResponses(
+    responses?: SubmissionAnswerResponse[] | null
+  ): { score: number | null; teacherNote: string | null } {
+    const items = (responses || []).filter(Boolean);
+    const scores = items
+      .map((r) => r?.gradeScore)
+      .filter((v): v is number => v !== null && v !== undefined)
+      .map((v) => Number(v))
+      .filter((v) => Number.isFinite(v));
+    const notes = Array.from(
+      new Set(
+        items
+          .map((r) => (r?.teacherNote ? String(r.teacherNote).trim() : ''))
+          .filter((t) => !!t)
+      )
+    );
+    return {
+      score: scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : null,
+      teacherNote: notes.length ? notes.join('\n\n') : null,
+    };
+  }
+
+  private computeAiByQuestionFromResponses(
+    responses?: SubmissionAnswerResponse[] | null
+  ): Record<string, { score: number | null; teacherNote: string | null }> {
+    const map: Record<string, { score: number | null; teacherNote: string | null }> = {};
+    (responses || []).filter(Boolean).forEach((r) => {
+      const qid = String((r as any)?.questionId ?? '');
+      if (!qid) {
+        return;
+      }
+      const scoreRaw = (r as any)?.gradeScore;
+      const score = scoreRaw === null || scoreRaw === undefined ? null : Number(scoreRaw);
+      const noteRaw = (r as any)?.teacherNote;
+      const teacherNote = noteRaw && String(noteRaw).trim() ? String(noteRaw).trim() : null;
+      map[qid] = {
+        score: Number.isFinite(score as any) ? (score as number) : null,
+        teacherNote,
+      };
+    });
+    return map;
+  }
+
+  private renderMarkdown(markdown: string | null): SafeHtml {
+    try {
+      const html = marked.parse(markdown || '') as string;
+      return this.sanitizer.bypassSecurityTrustHtml(html);
+    } catch (e) {
+      console.warn('Failed to render markdown', e);
+      return this.sanitizer.bypassSecurityTrustHtml('');
+    }
+  }
+
+  private renderMarkdownMap(source: Record<string, { score: number | null; teacherNote: string | null }>): Record<string, SafeHtml> {
+    const out: Record<string, SafeHtml> = {};
+    Object.keys(source || {}).forEach((qid) => {
+      out[qid] = this.renderMarkdown(source[qid]?.teacherNote ?? null);
+    });
+    return out;
+  }
+
+  private buildQuestionToSectionMap(): Record<string, string> {
+    const qToSection: Record<string, string> = {};
+    Object.keys(this.sectionDefinitions || {}).forEach((sid) => {
+      (this.sectionDefinitions[sid].questions || []).forEach((q) => {
+        qToSection[String(q.id)] = sid;
+      });
+    });
+    return qToSection;
+  }
+
+  private refreshAiGradeForSection(sectionId: string) {
+    if (!this.quizId || !this.userId || !this.submissionId) {
+      return;
+    }
+    const qToSection = this.buildQuestionToSectionMap();
+    this.quizSubmission
+      .getUserSubmissions(this.quizId, this.userId)
+      .pipe(take(1))
+      .subscribe({
+        next: (subs: QuizSubmissionResponse[]) => {
+          const submission = (subs || []).find((s) => s.id === this.submissionId);
+          if (!submission) {
+            return;
+          }
+          const answers = (submission.answers || []).filter(
+            (a) => (qToSection[String(a.questionId)] || 'general') === sectionId
+          );
+          const aiByQuestion = this.computeAiByQuestionFromResponses(answers as any);
+          const scores = answers
+            .map((a) => a.gradeScore)
+            .filter((v): v is number => v !== null && v !== undefined)
+            .map((v) => Number(v))
+            .filter((v) => Number.isFinite(v));
+          const notes = Array.from(
+            new Set(
+              answers
+                .map((a) => (a.teacherNote ? String(a.teacherNote).trim() : ''))
+                .filter((t) => !!t)
+            )
+          );
+          const aiScore = scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : null;
+          const teacherNote = notes.length ? notes.join('\n\n') : null;
+
+          if (!this.sectionResults[sectionId]) {
+            this.sectionResults[sectionId] = {
+              autoScore: 0,
+              autoTotal: 0,
+              answers: {},
+              textAnswers: {},
+              aiScore,
+              teacherNote,
+              aiByQuestion,
+              timestamp: submission.submitTime || submission.startTime || new Date().toISOString(),
+            };
+          } else {
+            this.sectionResults[sectionId].aiScore = aiScore;
+            this.sectionResults[sectionId].teacherNote = teacherNote;
+            this.sectionResults[sectionId].aiByQuestion = aiByQuestion;
+          }
+
+          if (this.currentSectionId === sectionId) {
+            this.aiGradeScore = aiScore;
+            this.aiTeacherNote = teacherNote;
+            this.currentAiByQuestion = aiByQuestion;
+            this.aiMarkdownByQuestion = this.renderMarkdownMap(this.currentAiByQuestion);
+          }
+        },
+        error: (e) => console.warn('Failed to refresh AI grade for section', sectionId, e),
       });
   }
 

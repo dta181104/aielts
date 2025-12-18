@@ -38,7 +38,8 @@ public class SubmissionAnswerEntity {
     @Column(name = "audio_url", length = 500)
     private String audioUrl;
 
-    @Column(name = "grade_score", precision = 5, scale = 2)
+    // Change scale to 1 to store values like 7.0 (one decimal place) instead of two decimals
+    @Column(name = "grade_score", precision = 5, scale = 1)
     private BigDecimal gradeScore;
 
     @Column(name = "teacher_note", columnDefinition = "TEXT")
