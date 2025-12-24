@@ -24,7 +24,7 @@ public class GeminiController {
             WritingGradingResponse result = geminiService.gradeWriting(
                     request.getSection(),
                     request.getWritingTopic(),
-                    request.getWritingContent()
+                    request.getWritingAnswer()
             );
 
             return ResponseEntity.ok(result);

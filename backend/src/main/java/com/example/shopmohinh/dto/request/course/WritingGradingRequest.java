@@ -6,5 +6,5 @@ import lombok.Data;
 public class WritingGradingRequest {
     private Integer section;
     private String writingTopic;
-    private String writingContent;
+    private String writingAnswer;
 }
