@@ -3,6 +3,7 @@ package com.example.shopmohinh.service.impl;
 import com.example.shopmohinh.dto.request.SubmissionAnswerRequest;
 import com.example.shopmohinh.dto.response.QuizSubmissionResponse;
 import com.example.shopmohinh.dto.response.SubmissionAnswerResponse;
+import com.example.shopmohinh.dto.response.course.SpeakingGradingResponse;
 import com.example.shopmohinh.entity.User;
 import com.example.shopmohinh.entity.course.QuestionEntity;
 import com.example.shopmohinh.entity.course.QuizEntity;
@@ -26,7 +27,8 @@ import java.math.RoundingMode;
 import java.io.IOException;
 import java.util.Locale;
 
-import com.example.shopmohinh.dto.response.course.WritingGradingResult;
+import com.example.shopmohinh.dto.response.course.WritingGradingResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class QuizSubmissionService {
@@ -87,13 +89,6 @@ public class QuizSubmissionService {
 
         entity.setSelectedOption(req.getSelectedOption());
         entity.setTextAnswer(req.getTextAnswer());
-//        entity.setAudioUrl(req.getAudioUrl());
-        if (questionSkill.equals("SPEAKING") && req.getAudioFile() != null) {
-            String folderName = "AIELTS/submission/question_" + question.getId();
-            String customFileName = "question_" + question.getId() + "_submission_" + submissionId;
-            String audioUrl = fileUploadUtil.uploadAudio(req.getAudioFile(), folderName, customFileName);
-            entity.setAudioUrl(audioUrl);
-        }
 
         // Auto-evaluate for MCQ
         if ( (questionSkill.equals("LISTENING") || questionSkill.equals("READING")) &&
@@ -106,12 +101,12 @@ public class QuizSubmissionService {
         if (questionSkill.equals("WRITING")) {
 
             // Prepare inputs for Gemini grading
-            String essayContent = entity.getTextAnswer();
-            String essayTopic = question.getContent();
             Integer section = question.getSection();
+            String writingTopic = question.getContent();
+            String writingAnswer = entity.getTextAnswer();
 
             try {
-                WritingGradingResult result = geminiService.gradeWriting(section, essayTopic, essayContent == null ? "" : essayContent);
+                WritingGradingResponse result = geminiService.gradeWriting(section, writingTopic, writingAnswer == null ? "" : writingAnswer);
                 if (result != null) {
                     // store overall band into gradeScore (if available)
                     if (result.getOverallBand() != null) {
@@ -121,7 +116,7 @@ public class QuizSubmissionService {
 
                     // build markdown teacher note from structured feedback
                     if (result.getFeedback() != null) {
-                        WritingGradingResult.Feedback fb = result.getFeedback();
+                        WritingGradingResponse.Feedback fb = result.getFeedback();
                         StringBuilder md = new StringBuilder();
 
                         if (fb.getGeneralFeedback() != null && !fb.getGeneralFeedback().isBlank()) {
@@ -180,6 +175,81 @@ public class QuizSubmissionService {
                 entity.setTeacherNote("Lỗi khi chấm tự động: " + e.getMessage());
             }
 
+        }
+
+        if (questionSkill.equals("SPEAKING") && req.getAudioFile() != null) {
+            String folderName = "AIELTS/submission/question_" + question.getId();
+            String customFileName = "question_" + question.getId() + "_submission_" + submissionId;
+            String audioUrl = fileUploadUtil.uploadAudio(req.getAudioFile(), folderName, customFileName);
+            entity.setAudioUrl(audioUrl);
+
+            Integer section = question.getSection();
+            String speakingTopic = question.getContent();
+            MultipartFile audioFile = req.getAudioFile();
+
+            try {
+                SpeakingGradingResponse result = geminiService.gradeSpeaking(section, speakingTopic, audioFile);
+                if (result != null) {
+                    // store overall band into gradeScore (if available)
+                    if (result.getOverallBand() != null) {
+                        entity.setGradeScore(BigDecimal.valueOf(result.getOverallBand()).setScale(1, RoundingMode.HALF_UP));
+                    }
+
+                    // build markdown teacher note from structured feedback
+                    if (result.getFeedback() != null) {
+                        SpeakingGradingResponse.Feedback fb = result.getFeedback();
+                        StringBuilder md = new StringBuilder();
+
+                        if (fb.getYourSpeech() != null && !fb.getYourSpeech().isBlank()) {
+                            md.append("- **Your Speech**: ").append(fb.getYourSpeech()).append("\n\n");
+                        }
+
+                        if (fb.getGeneralFeedback() != null && !fb.getGeneralFeedback().isBlank()) {
+                            md.append("- **Nhận xét chung**: ").append(fb.getGeneralFeedback()).append("\n\n");
+                        }
+
+                        if (fb.getStrongPoints() != null && !fb.getStrongPoints().isBlank()) {
+                            md.append("- **Điểm mạnh**: ").append(fb.getStrongPoints()).append("\n\n");
+                        }
+
+                        if (fb.getWeakPoints() != null && !fb.getWeakPoints().isBlank()) {
+                            md.append("- **Điểm yếu**: ").append(fb.getWeakPoints()).append("\n\n");
+                        }
+
+                        // Scores per criteria (force dot decimal using Locale.US)
+                        if (result.getFcScore() != null) {
+                            md.append("- **Fluency and Coherence**: ").append(String.format(Locale.US, "%.1f", result.getFcScore())).append("\n\n");
+                        }
+                        if (result.getLrScore() != null) {
+                            md.append("- **Lexical Resource**: ").append(String.format(Locale.US, "%.1f", result.getLrScore())).append("\n\n");
+                        }
+                        if (result.getGraScore() != null) {
+                            md.append("- **Grammatical Range and Accuracy**: ").append(String.format(Locale.US, "%.1f", result.getGraScore())).append("\n\n");
+                        }
+                        if (result.getPrScore() != null) {
+                            md.append("- **Pronunciation**: ").append(String.format(Locale.US, "%.1f", result.getPrScore())).append("\n\n");
+                        }
+
+                        // Detailed per-criterion feedback (if provided)
+                        if (fb.getFcFeedback() != null && !fb.getFcFeedback().isBlank()) {
+                            md.append("- **Fluency and Coherence feedback**: ").append(fb.getFcFeedback()).append("\n\n");
+                        }
+                        if (fb.getLrFeedback() != null && !fb.getLrFeedback().isBlank()) {
+                            md.append("- **Lexical Resource feedback**: ").append(fb.getLrFeedback()).append("\n\n");
+                        }
+                        if (fb.getGraFeedback() != null && !fb.getGraFeedback().isBlank()) {
+                            md.append("- **Grammatical Range and Accuracy feedback**: ").append(fb.getGraFeedback()).append("\n\n");
+                        }
+                        if (fb.getPrFeedback() != null && !fb.getPrFeedback().isBlank()) {
+                            md.append("- **Pronunciation feedback**: ").append(fb.getPrFeedback()).append("\n\n");
+                        }
+                        entity.setTeacherNote(md.toString().trim());
+                    }
+                }
+            } catch (IOException e) {
+                // On error, save an error note so teacher can see
+                entity.setTeacherNote("Lỗi khi chấm tự động: " + e.getMessage());
+            }
         }
 
         SubmissionAnswerEntity saved = answerRepository.save(entity);

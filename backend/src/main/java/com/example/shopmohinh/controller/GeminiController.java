@@ -1,7 +1,9 @@
 package com.example.shopmohinh.controller;
 
 import com.example.shopmohinh.dto.request.course.WritingGradingRequest;
-import com.example.shopmohinh.dto.response.course.WritingGradingResult;
+import com.example.shopmohinh.dto.response.course.WritingGradingResponse;
+import com.example.shopmohinh.dto.request.course.SpeakingGradingRequest;
+import com.example.shopmohinh.dto.response.course.SpeakingGradingResponse;
 import com.example.shopmohinh.service.impl.GeminiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,17 +18,34 @@ public class GeminiController {
 
     private final GeminiService geminiService;
 
-    @PostMapping("/grading")
-    public ResponseEntity<?> geminiGrading(@RequestBody WritingGradingRequest request) {
+    @PostMapping("/grading/writing")
+    public ResponseEntity<?> geminiGradingWriting(@RequestBody WritingGradingRequest request) {
         try {
-            WritingGradingResult result = geminiService.gradeWriting(
+            WritingGradingResponse result = geminiService.gradeWriting(
                     request.getSection(),
-                    request.getEssayTopic(),
-                    request.getEssayContent()
+                    request.getWritingTopic(),
+                    request.getWritingContent()
             );
 
             return ResponseEntity.ok(result);
 
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            return ResponseEntity.internalServerError().body("Lỗi hệ thống chấm điểm: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/grading/speaking")
+    public ResponseEntity<?> geminiGradingSpeaking(@RequestBody SpeakingGradingRequest request) {
+        try {
+            SpeakingGradingResponse result = geminiService.gradeSpeaking(
+                    request.getSection(),
+                    request.getSpeakingTopic(),
+                    request.getAudioFile()
+            );
+
+            return ResponseEntity.ok(result);
         } catch (IOException e) {
             e.printStackTrace();
 

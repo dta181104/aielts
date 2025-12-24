@@ -9,35 +9,28 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class WritingGradingResult {
+public class SpeakingGradingResponse {
 
     private Double overallBand;
-    // Chỉ có 1 trong 2 mục taScore hoặc trScore tương ứng với section 1 và 2
-    private Double taScore; // Task Achievement
-    private Double trScore; // Task Response
-
-    private Double ccScore; // Coherence and Cohesion
+    private Double fcScore; // Fluency and Coherence
     private Double lrScore; // Lexical Resource
     private Double graScore; // Grammatical Range and Accuracy
+    private Double prScore;  // Pronunciation
 
-    // Changed from String to a structured object to match Gemini's JSON schema
     private Feedback feedback;
 
-    // Nested class representing detailed feedback structure returned by Gemini
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Feedback {
+        private String yourSpeech;
         private String generalFeedback;
         private String strongPoints;
         private String weakPoints;
-        // Gemini will return either taFeedback or trFeedback depending on section; include both to be safe
-        private String taFeedback;
-        private String trFeedback;
-        private String ccFeedback;
+        private String fcFeedback;
         private String lrFeedback;
         private String graFeedback;
+        private String prFeedback;
     }
-
 }
